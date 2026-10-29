@@ -111,6 +111,8 @@
 | GET | `/api/v1/datasources/{id}/schema` | `datasource:read` | 表/字段/注释/主键 |
 | POST | `/api/v1/datasources/{id}/query` | `datasource:query` | `{sql, maxRows}` → `{columns, rows, elapsedMs, truncated}`；只读 + 强制 LIMIT |
 | GET | `/api/v1/datasources/{id}/query-logs?page&size` | `datasource:read` | SQL 审计 |
+| POST | `/api/v1/sandbox/execute` | `datasource:query` | `{language: java\|python\|node\|shell, code, timeoutSeconds?, env?}` → `SandboxResult`；默认 Process 沙箱，Docker 可用时可选 |
+| GET | `/api/v1/sandbox/providers` | `datasource:read` | 可用沙箱实现列表（process/docker）与能力说明 |
 
 ### 2.6 Agent Harness（agentforge-agent，写者 backend-runtime）
 
@@ -251,7 +253,7 @@ public record SandboxResult(boolean success, String stdout, String stderr, int e
 | --- | --- | --- |
 | `V1__core_auth_rbac.sql` | Lead（已完成） | 用户/角色/权限/关联/邮箱验证码/refresh token/登录日志 |
 | `V2__token_audit_and_model.sql` | backend-foundation | `ai_model`、`ai_token_usage`、`ai_model_price`，以及 `model:read/write` 权限种子、默认管理员账号 |
-| `V3__memory.sql` | backend-knowledge | 记忆轮次元数据（可选；Redis 为主存储） |
+| `V3__memory.sql` | audit-memory | 可选（Redis 为主存储；无 Redis 时内存降级不落库，故 v0.1.0 可缺省，版本号留空） |
 | `V4__rag.sql` | backend-knowledge | `kb_knowledge_base`、`kb_document`、`kb_chunk` |
 | `V5__datasource.sql` | backend-runtime | `ds_datasource`、`ds_query_log` |
 | `V6__agent.sql` | backend-runtime | `agent_definition`、`agent_version`、`agent_run`、`agent_run_step`、`agent_orchestration` |
@@ -271,7 +273,7 @@ public record SandboxResult(boolean success, String stdout, String stderr, int e
 
 内置角色：`SUPER_ADMIN`（全部）、`ADMIN`（除 `user:write`/`role:write`/`model:write` 外的管理权限）、`USER`（`agent:read/run`、`rag:read`、`datasource:read/query`、`memory:read`）。
 
-默认账号（仅 dev，`V2` 种子）：`admin@agentforge.dev` / `Admin@123456`。
+默认账号（仅 dev，由 `agentforge-security` 的 `DataInitializer` 在不存在时创建，**不写入 Flyway 迁移**）：`admin@agentforge.dev` / `Admin@123456`；`model:read/write` 等新增权限码由 `V2` 迁移种子并授权给内置角色。
 
 ## 8. 附录 B：业务错误码登记
 
