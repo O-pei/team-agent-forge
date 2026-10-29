@@ -663,17 +663,30 @@ public class MyTool implements AgentToolDefinition {
 目标：高风险工具（`sql_query`/`code_execute`）执行前暂停、发 `interrupted`、等审批后恢复。
 
 当前 v0.1：`/runs/{runId}/approve` 只校验 RUNNING 并写 `APPROVAL` 步骤，**不真正恢复执行**。
-v0.2 步骤（SAA 1.1.2.4 已具备能力）：
+v0.2 步骤（SAA 1.1.2.4 已具备能力，类已用 `javap` 确认存在）：
 
 1. **必须配置 saver**（`ReactAgent.builder().saver(...)`，当前是 `MemorySaver`；重启后中断态丢失，
    生产应换 `RedisSaver`）；
-2. 在工具执行链上注册 `HumanInTheLoopHook`（SAA hook 包）或自定义 `ToolInterceptor` 拦截高风险工具，
-   调用 `ReactAgent.interrupt(config)` 挂起，从 checkpoint 读回中断态，发 `interrupted` 事件（`approvalId` 持久化）；
-3. 审批接口收到 `approved=true` 后，用同一 `threadId` 的 `RunnableConfig` 恢复（SAA 的 resume API），
-   继续执行工具；
-4. 前端按 `interrupted` → 弹窗 → `POST /runs/{id}/approve` → 继续接收同一 SSE 流的事件。
+2. 注册 SAA 自带的 HITL hook（`spring-ai-alibaba-agent-framework` 的
+   `com.alibaba.cloud.ai.graph.agent.hook.hip.HumanInTheLoopHook`，继承 `ModelHook` 并实现
+   `InterruptableAction`），按工具声明审批点：
 
-> 要点：hook 没有 saver 无法中断/恢复；`threadId` 必须与首次运行一致（本模块用 `sessionId`）。
+```java
+HumanInTheLoopHook hitl = HumanInTheLoopHook.builder()
+        .approvalOn("sql_query", "执行只读 SQL 前需要人工确认")   // 或 approvalOn(Map<String, ToolConfig>)
+        .build();
+builder.hooks(List.of(ModelCallLimitHook.builder().runLimit(maxIterations).build(), hitl));
+```
+
+3. 运行到审批点时由 `InterruptableAction.interrupt(...)` 产生中断态（`InterruptionMetadata`），
+   写入 saver 的 checkpoint；Agent 侧调用 `ReactAgent.interrupt(config)` 挂起，发 `interrupted` 事件，
+   `approvalId` 持久化到 `agent_run`/前端；
+4. 审批接口收到 `approved=true` 后，用**同一 `threadId`（本模块 = `sessionId`）**的 `RunnableConfig`
+   从 checkpoint 恢复执行（SAA resume API），继续跑工具并推送后续事件；
+5. 前端按 `interrupted` → 弹窗 → `POST /runs/{id}/approve` → 继续接收事件。
+
+> 要点：hook 没有 saver 无法中断/恢复（`MemorySaver` 可用但进程重启即丢，生产必须 `RedisSaver`）；
+> `threadId` 必须与首次运行一致，否则找不到 checkpoint。
 
 ### 7.4 接入真实 RedisSaver
 
@@ -681,15 +694,20 @@ v0.2 步骤（SAA 1.1.2.4 已具备能力）：
 
 ```java
 // 依赖：agentforge.memory.redis-enabled=true（app 配置）且 RedissonClient Bean 存在
-RedissonClient redisson = ...;                     // app 装配
-StateSerializer serializer = new JacksonStateSerializer(...);  // SAA graph-core 提供
+RedissonClient redisson = ...;                                  // app 装配（Redisson 自动配置或手工 Bean）
+StateSerializer serializer = new SpringAIJacksonStateSerializer(...); // graph-core 提供：
+//   com.alibaba.cloud.ai.graph.serializer.plain_text.jackson.SpringAIJacksonStateSerializer
+//   （同包还有 JacksonStateSerializer / PlainTextStateSerializer；构造参数以所用 SAA 版本为准）
 RedisSaver saver = RedisSaver.builder()
         .redisson(redisson)
         .stateSerializer(serializer)
+        .ttl(24, TimeUnit.HOURS)                                // 可选：checkpoint 过期时间
         .build();
-ReactAgentFactory: saver 字段由 MemorySaver 改为注入的 BaseCheckpointSaver
+// ReactAgentFactory：把 saver 字段由 new MemorySaver() 改为注入的 BaseCheckpointSaver
 ```
 
+`RedisSaver.Builder` 已实测签名：`redisson(RedissonClient)`、`stateSerializer(StateSerializer)`、
+`ttl(long, TimeUnit)`、`build()`。
 要求：`RedisSaver` 首次使用需初始化索引（SAA 的 `createIndexes` 或手动建 `checkpoint:*` 键空间），
 升级前验证 `threadId` 一致性与 TTL，避免 checkpoint 无限增长。
 
