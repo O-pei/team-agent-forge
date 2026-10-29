@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
  * 覆盖 TokenUsageRepository.summarize 用单元素 Object[] 接收多列聚合行、被 Spring Data 包装后长度不足导致全 0 的 bug。
  */
 @DataJpaTest
-@EntityScan("com.agentforge.audit.model")
+@EntityScan({"com.agentforge.audit.model", "com.agentforge.audit.quota.model"})
 @Import(UsageQueryService.class)
 class UsageAggregationTest {
 

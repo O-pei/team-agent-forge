@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 
 public interface TokenUsageRepository extends JpaRepository<TokenUsageEntity, Long>,
@@ -36,4 +37,47 @@ public interface TokenUsageRepository extends JpaRepository<TokenUsageEntity, Lo
             order by u.createdAt asc
             """)
     List<Object[]> findRows(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+
+    /**
+     * 用户当日已用 Token（total_tokens 求和）。
+     */
+    @Query("""
+            select coalesce(sum(u.totalTokens), 0L)
+            from TokenUsageEntity u
+            where u.userId = :userId and u.createdAt >= :from
+            """)
+    Long sumTotalTokensByUserSince(@Param("userId") Long userId, @Param("from") LocalDateTime from);
+
+    /**
+     * 用户全部历史已用 Token。
+     */
+    @Query("""
+            select coalesce(sum(u.totalTokens), 0L)
+            from TokenUsageEntity u
+            where u.userId = :userId
+            """)
+    Long sumTotalTokensByUser(@Param("userId") Long userId);
+
+    /**
+     * 批量查询用户当日已用 Token，用于用户额度列表避免逐用户查询。
+     */
+    @Query("""
+            select u.userId, coalesce(sum(u.totalTokens), 0L)
+            from TokenUsageEntity u
+            where u.userId in :userIds and u.createdAt >= :from
+            group by u.userId
+            """)
+    List<Object[]> sumTotalTokensByUserIdsSince(@Param("userIds") Collection<Long> userIds,
+                                                @Param("from") LocalDateTime from);
+
+    /**
+     * 批量查询用户全部已用 Token。
+     */
+    @Query("""
+            select u.userId, coalesce(sum(u.totalTokens), 0L)
+            from TokenUsageEntity u
+            where u.userId in :userIds
+            group by u.userId
+            """)
+    List<Object[]> sumTotalTokensByUserIds(@Param("userIds") Collection<Long> userIds);
 }
