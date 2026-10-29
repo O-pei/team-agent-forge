@@ -63,8 +63,8 @@ public class AgentRunService {
     }
 
     /**
-     * HITL 审批：v0.1 记录审批步骤与结果；SAA interrupt/resume 恢复执行在 v0.2 接入
-     * （需要前端在 interrupted 事件后调用本接口，服务端用 checkpoint 恢复）。
+     * HITL 审批：v0.1 只记录审批步骤与结果，SAA interrupt/resume 恢复执行放在 v0.2
+     * （前端收到 interrupted 事件后调用本接口，服务端用 checkpoint 恢复）。
      */
     @Transactional
     public RunResponse approve(Long runId, ApprovalRequest request) {

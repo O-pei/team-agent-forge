@@ -27,7 +27,7 @@ public class AgentDefinitionEntity extends BaseEntity {
     @Column(name = "description", length = 512)
     private String description;
 
-    /** {@link com.agentforge.agent.domain.AgentType} */
+    /** Agent 类型：SINGLE/SEQUENTIAL/PARALLEL/ROUTING/SUPERVISOR。 */
     @Column(name = "type", nullable = false, length = 16)
     private String type;
 

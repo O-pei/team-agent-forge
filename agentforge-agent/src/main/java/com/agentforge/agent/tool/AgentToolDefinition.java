@@ -3,11 +3,11 @@ package com.agentforge.agent.tool;
 import com.agentforge.agent.dto.ToolInfo;
 
 /**
- * 可注册工具的元信息。每个工具 Bean 实现本接口，由 {@link AgentToolRegistry} 汇总。
+ * 可注册工具的元信息：每个工具 Bean 实现本接口，由 AgentToolRegistry 汇总。
  */
 public interface AgentToolDefinition {
 
-    /** 模型可见的 tool name，取值见 {@link ToolNames}。 */
+    /** 模型可见的 tool name，取值见 ToolNames。 */
     String name();
 
     String description();
@@ -15,7 +15,7 @@ public interface AgentToolDefinition {
     /** LOW / MEDIUM / HIGH，用于 SSE tool.call 与 /api/v1/tools 展示。 */
     String riskLevel();
 
-    /** 含 @Tool 方法的 Bean 实例，传给 ReactAgent#methodTools。 */
+    /** 带 @Tool 方法的 Bean 实例，传给 ReactAgent 的 methodTools。 */
     Object toolBean();
 
     default ToolInfo toInfo() {

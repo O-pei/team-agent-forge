@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 知识库检索工具：只依赖冻结 SPI {@link KnowledgeRetriever}；实现缺失时降级提示。
+ * 知识库检索工具：只依赖冻结 SPI KnowledgeRetriever，实现缺失时返回降级提示。
  */
 @Slf4j
 @Component

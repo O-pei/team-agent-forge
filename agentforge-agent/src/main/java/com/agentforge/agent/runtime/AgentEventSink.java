@@ -1,7 +1,7 @@
 package com.agentforge.agent.runtime;
 
 /**
- * SSE 事件出口：生产环境接 {@code SseEmitter}，单测里接收集列表。
+ * SSE 事件出口：生产环境写入 SseEmitter，单测里写入收集列表。
  */
 @FunctionalInterface
 public interface AgentEventSink {

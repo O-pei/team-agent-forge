@@ -184,7 +184,6 @@ public class AgentService {
                 .toList();
     }
 
-    /** 供对话/运行服务复用。 */
     public AgentDefinitionEntity load(Long id) {
         if (id == null) {
             throw BizException.badRequest("agentId 不能为空");

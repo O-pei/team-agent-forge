@@ -15,7 +15,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * 只读 SQL 查询工具：SQL 校验、强制 LIMIT、超时与审计由 {@link SqlQueryService} 实现负责。
+ * 只读 SQL 查询工具：SQL 校验、强制 LIMIT、超时与审计由 SqlQueryService 实现负责。
  */
 @Slf4j
 @Component

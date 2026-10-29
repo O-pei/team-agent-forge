@@ -11,14 +11,11 @@ import reactor.core.publisher.Flux;
 import java.lang.reflect.Field;
 
 /**
- * 把底层 {@link ChatModel} 的默认 {@link ChatOptions} 换成 Jackson 可序列化的实现。
- *
- * <p>SAA 的 {@code DefaultBuilder} 构建 ReactAgent 时会用
- * {@code ModelOptionsUtils.merge} 合并 ChatOptions；Spring AI 的
- * {@code DefaultChatOptions} 没有 {@code @JsonProperty} 字段，合并时会抛
- * {@code IllegalArgumentException: No @JsonProperty fields found}（Mock 模型的默认选项就是该类）。
- * 这里用 {@link DashScopeChatOptions}（Jackson 可序列化）作为默认选项，调用委托给真实模型，
- * 保证工具调用链（ReactAgent）能正常构建。</p>
+ * 包装底层 ChatModel，提供 Jackson 可序列化的默认 ChatOptions。
+ * SAA 构建 ReactAgent 时会用 ModelOptionsUtils.merge 合并 ChatOptions，
+ * Spring AI 的 DefaultChatOptions 没有 JsonProperty 字段，合并会抛
+ * IllegalArgumentException，导致 Mock 模型无法构建 ReactAgent；
+ * 这里统一用 DashScopeChatOptions 作为默认选项，模型调用仍委托底层实现。
  */
 public class JacksonSafeChatModel implements ChatModel {
 
@@ -30,7 +27,7 @@ public class JacksonSafeChatModel implements ChatModel {
         this.defaultOptions = buildDefaultOptions(delegate);
     }
 
-    /** 底层模型是否已经提供了 Jackson 可序列化的 ChatOptions。 */
+    /** 判断选项类是否已有 JsonProperty 字段，可被 SAA 合并。 */
     public static boolean hasJacksonAnnotatedOptions(ChatOptions options) {
         if (options == null) {
             return false;

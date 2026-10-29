@@ -10,7 +10,7 @@ import lombok.Setter;
 
 /**
  * 多智能体编排定义（SEQUENTIAL / PARALLEL / ROUTING / SUPERVISOR）。
- * v0.1 中编排既可通过 AgentDefinition.type + subAgentIds 表达，也可在此单独保存可复用编排模板。
+ * v0.1 既可用 AgentDefinition 的 type 加 subAgentIds 表达，也可在此保存可复用编排模板。
  */
 @Entity
 @Table(name = "agent_orchestration")

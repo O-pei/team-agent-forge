@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * Agent 配置版本快照（不可变历史）。业务版本号用 {@code version_no}，避免与乐观锁 {@code version} 冲突。
+ * Agent 配置版本快照（不可变历史）；业务版本号用 version_no，避免与乐观锁 version 冲突。
  */
 @Entity
 @Table(name = "agent_version")

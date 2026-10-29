@@ -30,10 +30,9 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * 从数据库配置构建 SAA Agent（ReactAgent / FlowAgent）。
- *
- * <p>模型来自 {@link ModelProviderFactory}；无实现或解析失败时降级为 {@link MockChatModel}，
- * 保证零配置环境可用。saver 使用 {@link MemorySaver}（无 Redis 环境）。</p>
+ * 从数据库配置构建 SAA Agent（ReactAgent 或 FlowAgent 编排）。
+ * 模型来自 ModelProviderFactory，无实现或解析失败时降级为 MockChatModel，
+ * 保证零配置环境可用；saver 用 MemorySaver（无 Redis 环境）。
  */
 @Slf4j
 @Component
@@ -98,9 +97,10 @@ public class ReactAgentFactory {
     }
 
     /**
-     * SAA 1.1.2.4 没有原生 SupervisorAgent，SUPERVISOR 用 LlmRoutingAgent 近似实现：
-     * 由主管模型选择子 Agent，fallback 到第一个子 Agent。
-     */    private Agent buildSupervisor(AgentDefinitionEntity definition, RunContext context, ChatModel model,
+     * SAA 1.1.2.4 没有原生 SupervisorAgent，这里用 LlmRoutingAgent 近似：
+     * 由主管模型选择子 Agent，并 fallback 到第一个子 Agent。
+     */
+    private Agent buildSupervisor(AgentDefinitionEntity definition, RunContext context, ChatModel model,
                                   MemorySaver saver, int depth) {
         List<Agent> subAgents = loadSubAgents(definition, context, depth);
         if (subAgents.isEmpty()) {

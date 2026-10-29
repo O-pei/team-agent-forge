@@ -14,7 +14,7 @@ import java.time.Duration;
 import java.util.Map;
 
 /**
- * 代码执行工具：命令白名单/超时/输出上限由 {@link SandboxProvider} 实现负责。
+ * 代码执行工具：命令白名单、超时与输出上限由 SandboxProvider 实现负责。
  */
 @Slf4j
 @Component

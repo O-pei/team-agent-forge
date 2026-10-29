@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * 工具注册表：汇总所有 {@link AgentToolDefinition} Bean，按名称解析给 ReactAgent。
+ * 工具注册表：汇总所有 AgentToolDefinition Bean，按名称解析给 ReactAgent。
  */
 @Component
 public class AgentToolRegistry {
@@ -30,9 +30,7 @@ public class AgentToolRegistry {
         return new AgentToolRegistry(List.of(tools));
     }
 
-    /**
-     * 解析工具名称为 Bean 实例列表（同一 Bean 的多个工具只注册一次）。
-     */
+    /** 按名称解析出工具 Bean，同一 Bean 只返回一次。 */
     public List<Object> resolve(List<String> names) {
         if (names == null || names.isEmpty()) {
             return List.of();

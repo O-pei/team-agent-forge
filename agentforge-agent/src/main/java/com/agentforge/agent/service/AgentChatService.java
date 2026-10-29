@@ -170,8 +170,8 @@ public class AgentChatService {
     }
 
     /**
-     * 事件 data 序列化：统一附带 {@code type} 字段（与 event 名一致），便于前端按
-     * {@code {type, content}} 统一解析；同时保留契约字段（如 message.delta 的 content）。
+     * 序列化事件负载：补上与 event 名一致的 type 字段，便于前端统一按 type/content 解析，
+     * 同时保留契约字段。
      */
     String toJson(String event, Object data) {
         try {
