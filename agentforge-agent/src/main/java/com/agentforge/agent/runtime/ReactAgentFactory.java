@@ -199,7 +199,8 @@ public class ReactAgentFactory {
             model = new MockChatModel("mock-chat");
             context.setModelName("mock-chat");
         }
-        return model;
+        // SAA 合并 ChatOptions 时要求 Jackson 可序列化，默认的 DefaultChatOptions 不满足
+        return JacksonSafeChatModel.wrapIfNecessary(model);
     }
 
     private static String agentName(AgentDefinitionEntity definition) {
