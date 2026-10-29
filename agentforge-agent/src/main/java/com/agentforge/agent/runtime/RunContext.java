@@ -2,6 +2,7 @@ package com.agentforge.agent.runtime;
 
 import com.agentforge.agent.event.AgentEvent;
 import com.agentforge.agent.event.AgentEvents;
+import com.agentforge.common.exception.QuotaExceededException;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.metadata.Usage;
@@ -37,6 +38,7 @@ public class RunContext {
     private final LongAdder completionTokens = new LongAdder();
     private final LongAdder totalTokens = new LongAdder();
     private final AtomicBoolean cancelled = new AtomicBoolean(false);
+    private final AtomicReference<QuotaExceededException> quotaError = new AtomicReference<>();
     private final AtomicInteger seq = new AtomicInteger(0);
     private final AtomicInteger citationIndex = new AtomicInteger(0);
     @Getter
@@ -69,6 +71,20 @@ public class RunContext {
 
     public void cancel() {
         cancelled.set(true);
+    }
+
+    /**
+     * 记录额度异常并停止运行。SAA 的 AgentLlmNode 会把模型异常吞成一条 AssistantMessage，
+     * 额度错误必须留痕，由运行层在流结束后判定失败并返回 42901。
+     */
+    public void setQuotaError(QuotaExceededException error) {
+        if (error != null && quotaError.compareAndSet(null, error)) {
+            cancelled.set(true);
+        }
+    }
+
+    public QuotaExceededException getQuotaError() {
+        return quotaError.get();
     }
 
     /** 推送 SSE 事件；sink 异常时标记取消，避免线程持续写已关闭的连接。 */

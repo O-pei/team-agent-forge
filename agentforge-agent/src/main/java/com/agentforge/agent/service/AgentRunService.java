@@ -8,8 +8,10 @@ import com.agentforge.agent.dto.RunStepResponse;
 import com.agentforge.agent.entity.AgentRunEntity;
 import com.agentforge.agent.entity.AgentRunStepEntity;
 import com.agentforge.agent.repository.AgentRunStepRepository;
+import com.agentforge.agent.runtime.QuotaErrors;
 import com.agentforge.agent.runtime.RunRegistry;
 import com.agentforge.common.exception.BizException;
+import com.agentforge.common.exception.QuotaExceededException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -44,6 +46,10 @@ public class AgentRunService {
         } catch (RuntimeException e) {
             log.warn("运行失败 runId={}: {}", execution.context().getRunId(), e.getMessage());
             AgentRunEntity run = executionService.complete(execution, null, RunStatus.FAILED, e.getMessage());
+            QuotaExceededException quota = QuotaErrors.find(e);
+            if (quota != null) {
+                throw quota;
+            }
             throw BizException.badRequest("Agent 运行失败: " + run.getErrorMessage());
         }
     }

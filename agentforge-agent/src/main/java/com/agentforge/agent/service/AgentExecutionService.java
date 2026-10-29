@@ -13,15 +13,18 @@ import com.agentforge.agent.repository.AgentRunRepository;
 import com.agentforge.agent.repository.AgentRunStepRepository;
 import com.agentforge.agent.repository.AgentSessionRepository;
 import com.agentforge.agent.runtime.AgentEventSink;
+import com.agentforge.agent.runtime.QuotaErrors;
 import com.agentforge.agent.runtime.ReactAgentFactory;
 import com.agentforge.agent.runtime.RunContext;
 import com.agentforge.agent.runtime.RunContextHolder;
 import com.agentforge.agent.runtime.RunRegistry;
+import com.agentforge.audit.quota.QuotaService;
 import com.agentforge.audit.usage.UsageContext;
 import com.agentforge.common.context.TraceContext;
 import com.agentforge.common.context.TenantContext;
 import com.agentforge.common.context.UserContext;
 import com.agentforge.common.exception.BizException;
+import com.agentforge.common.exception.QuotaExceededException;
 import com.alibaba.cloud.ai.graph.NodeOutput;
 import com.alibaba.cloud.ai.graph.RunnableConfig;
 import com.alibaba.cloud.ai.graph.agent.Agent;
@@ -29,6 +32,7 @@ import com.alibaba.cloud.ai.graph.agent.ReactAgent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.messages.AssistantMessage;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -52,6 +56,7 @@ public class AgentExecutionService {
     private final AgentMessageRepository messageRepository;
     private final AgentSessionRepository sessionRepository;
     private final RunRegistry runRegistry;
+    private final ObjectProvider<QuotaService> quotaServiceProvider;
 
     /** 一次运行的只读句柄。 */
     public record Execution(AgentDefinitionEntity definition, Agent agent, RunContext context,
@@ -70,6 +75,7 @@ public class AgentExecutionService {
         }
         Long tenantId = TenantContext.getCurrentTenantId();
         Long userId = UserContext.getUserIdOrNull();
+        assertQuota(userId);
         String resolvedSessionId = sessionId == null || sessionId.isBlank()
                 ? UUID.randomUUID().toString() : sessionId.trim();
 
@@ -129,21 +135,57 @@ public class AgentExecutionService {
         if (agent instanceof ReactAgent reactAgent) {
             try {
                 AssistantMessage answer = reactAgent.call(execution.message(), execution.config());
+                assertNoQuotaExceeded(execution.context());
                 return answer == null ? "" : answer.getText();
             } catch (Exception e) {
-                throw new IllegalStateException("Agent 调用失败: " + e.getMessage(), e);
+                throw asQuotaOrIllegalState(e);
             }
         }
         NodeOutput output;
         try {
             output = agent.invokeAndGetOutput(execution.message(), execution.config()).orElse(null);
         } catch (Exception e) {
-            throw new IllegalStateException("Agent 调用失败: " + e.getMessage(), e);
+            throw asQuotaOrIllegalState(e);
         }
+        assertNoQuotaExceeded(execution.context());
         if (output != null && output.tokenUsage() != null) {
             execution.context().addUsage(output.tokenUsage());
         }
         return extractText(output);
+    }
+
+    /**
+     * SAA 的 AgentLlmNode 会把模型异常吞成 AssistantMessage，额度异常取不到时以上下文留痕为准。
+     */
+    private static void assertNoQuotaExceeded(RunContext context) {
+        QuotaExceededException quota = context.getQuotaError();
+        if (quota != null) {
+            throw quota;
+        }
+    }
+
+    /**
+     * 额度异常必须保持 42901 上抛，其余包装为运行失败。
+     */
+    private static RuntimeException asQuotaOrIllegalState(Exception error) {
+        QuotaExceededException quota = QuotaErrors.find(error);
+        if (quota != null) {
+            return quota;
+        }
+        return new IllegalStateException("Agent 调用失败: " + error.getMessage(), error);
+    }
+
+    /**
+     * 事务内预检额度：不足时直接抛 42901 回滚，不产生会话/运行等脏数据。
+     */
+    private void assertQuota(Long userId) {
+        if (userId == null) {
+            return;
+        }
+        QuotaService quotaService = quotaServiceProvider.getIfAvailable();
+        if (quotaService != null) {
+            quotaService.assertCanConsume(userId);
+        }
     }
 
     /** 从图输出提取最终文本。 */

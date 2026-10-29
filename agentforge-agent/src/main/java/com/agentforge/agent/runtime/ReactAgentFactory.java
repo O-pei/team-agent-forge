@@ -7,6 +7,7 @@ import com.agentforge.agent.tool.AgentToolRegistry;
 import com.agentforge.audit.gateway.ChatModelInfo;
 import com.agentforge.audit.gateway.ModelProviderFactory;
 import com.agentforge.audit.gateway.mock.MockChatModel;
+import com.agentforge.audit.quota.QuotaService;
 import com.agentforge.common.exception.BizException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -45,6 +46,7 @@ public class ReactAgentFactory {
     private final AgentToolRegistry toolRegistry;
     private final AgentDefinitionRepository definitionRepository;
     private final ObjectProvider<ModelProviderFactory> modelProviderFactoryProvider;
+    private final ObjectProvider<QuotaService> quotaServiceProvider;
     private final ObjectMapper objectMapper;
 
     public Agent build(AgentDefinitionEntity definition, RunContext context) {
@@ -199,6 +201,9 @@ public class ReactAgentFactory {
             model = new MockChatModel("mock-chat");
             context.setModelName("mock-chat");
         }
+        // 每次模型调用前复检额度，超额抛 42901，并记录到运行上下文
+        model = QuotaGuardChatModel.wrapIfNecessary(model, context.getUserId(),
+                quotaServiceProvider.getIfAvailable(), context::setQuotaError);
         // SAA 合并 ChatOptions 时要求 Jackson 可序列化，默认的 DefaultChatOptions 不满足
         return JacksonSafeChatModel.wrapIfNecessary(model);
     }

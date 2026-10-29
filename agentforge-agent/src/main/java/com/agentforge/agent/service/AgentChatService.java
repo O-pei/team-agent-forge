@@ -4,9 +4,11 @@ import com.agentforge.agent.dto.ChatStreamRequest;
 import com.agentforge.agent.event.AgentEvent;
 import com.agentforge.agent.event.AgentEvents;
 import com.agentforge.agent.runtime.AgentEventSink;
+import com.agentforge.agent.runtime.QuotaErrors;
 import com.agentforge.agent.runtime.RunContext;
 import com.agentforge.common.api.ErrorCode;
 import com.agentforge.common.exception.BizException;
+import com.agentforge.common.exception.QuotaExceededException;
 import com.alibaba.cloud.ai.graph.NodeOutput;
 import com.alibaba.cloud.ai.graph.agent.ReactAgent;
 import com.alibaba.cloud.ai.graph.streaming.OutputType;
@@ -66,8 +68,7 @@ public class AgentChatService {
         } catch (RuntimeException e) {
             // 启动阶段（校验/落库/构建 Agent）失败也走 SSE error 事件，避免客户端拿到 JSON 500
             log.warn("SSE 启动失败 agentId={}", request.agentId(), e);
-            int code = e instanceof BizException biz ? biz.getCode() : ErrorCode.INTERNAL_ERROR.getCode();
-            send(emitter, AgentEvent.ERROR, new AgentEvents.ErrorData(code, e.getMessage()));
+            send(emitter, AgentEvent.ERROR, new AgentEvents.ErrorData(errorCode(e), errorMessage(e)));
             emitter.complete();
             return emitter;
         }
@@ -111,6 +112,10 @@ public class AgentChatService {
                 context.emit(AgentEvent.MESSAGE_DELTA, new AgentEvents.MessageDelta(fallback.toString()));
                 answer.append(fallback);
             }
+            // SAA 的 AgentLlmNode 会把模型异常吞成助手消息，额度错误需在流结束后主动判定
+            if (context.getQuotaError() != null) {
+                throw context.getQuotaError();
+            }
             String finalAnswer = answer.toString();
             context.resolveStreamOutput(finalAnswer);
             context.emit(AgentEvent.MESSAGE_COMPLETED, new AgentEvents.MessageCompleted(finalAnswer));
@@ -122,19 +127,57 @@ public class AgentChatService {
             context.emit(AgentEvent.RUN_COMPLETED, executionService.completedEvent(execution, run));
             emitter.complete();
         } catch (Exception e) {
-            log.error("SSE 运行失败 runId={}", context.getRunId(), e);
-            try {
-                context.emit(AgentEvent.ERROR, new AgentEvents.ErrorData(
-                        ErrorCode.INTERNAL_ERROR.getCode(), e.getMessage()));
-                var run = executionService.complete(execution,
-                        answer.length() == 0 ? null : answer.toString(),
-                        com.agentforge.agent.domain.RunStatus.FAILED, e.getMessage());
-                context.emit(AgentEvent.RUN_COMPLETED, executionService.completedEvent(execution, run));
-            } catch (Exception persistenceError) {
-                log.error("保存失败运行记录出错 runId={}", context.getRunId(), persistenceError);
-            }
-            emitter.complete();
+            handleRunFailure(execution, answer, e, emitter);
         }
+    }
+
+    /**
+     * 运行失败：先发 error（额度不足为 42901），再落 FAILED 运行记录与 run.completed。
+     */
+    void handleRunFailure(AgentExecutionService.Execution execution, StringBuilder answer, Exception error,
+                          SseEmitter emitter) {
+        RunContext context = execution.context();
+        log.warn("SSE 运行失败 runId={}", context.getRunId(), error);
+        try {
+            context.emit(AgentEvent.ERROR, new AgentEvents.ErrorData(errorCode(error), errorMessage(error)));
+            var run = executionService.complete(execution,
+                    answer.length() == 0 ? null : answer.toString(),
+                    com.agentforge.agent.domain.RunStatus.FAILED, errorMessage(error));
+            context.emit(AgentEvent.RUN_COMPLETED, executionService.completedEvent(execution, run));
+        } catch (Exception persistenceError) {
+            log.error("保存失败运行记录出错 runId={}", context.getRunId(), persistenceError);
+        }
+        emitter.complete();
+    }
+
+    static int errorCode(Throwable error) {
+        QuotaExceededException quota = QuotaErrors.find(error);
+        if (quota != null) {
+            return quota.getCode();
+        }
+        Throwable cursor = error;
+        while (cursor != null) {
+            if (cursor instanceof BizException biz) {
+                return biz.getCode();
+            }
+            cursor = cursor.getCause();
+        }
+        return ErrorCode.INTERNAL_ERROR.getCode();
+    }
+
+    static String errorMessage(Throwable error) {
+        QuotaExceededException quota = QuotaErrors.find(error);
+        if (quota != null && quota.getMessage() != null) {
+            return quota.getMessage();
+        }
+        Throwable cursor = error;
+        while (cursor != null) {
+            if (cursor instanceof BizException biz && biz.getMessage() != null) {
+                return biz.getMessage();
+            }
+            cursor = cursor.getCause();
+        }
+        return error.getMessage();
     }
 
     private void handleNode(NodeOutput node, RunContext context, StringBuilder answer, StringBuilder fallback) {

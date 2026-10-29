@@ -6,6 +6,9 @@ import com.agentforge.agent.repository.AgentDefinitionRepository;
 import com.agentforge.agent.tool.AgentToolRegistry;
 import com.agentforge.agent.tool.CalculatorTool;
 import com.agentforge.audit.gateway.ModelProviderFactory;
+import com.agentforge.audit.quota.QuotaService;
+import com.agentforge.audit.quota.QuotaStatus;
+import com.agentforge.common.exception.QuotaExceededException;
 import com.alibaba.cloud.ai.graph.agent.Agent;
 import com.alibaba.cloud.ai.graph.agent.ReactAgent;
 import com.alibaba.cloud.ai.graph.agent.flow.agent.LlmRoutingAgent;
@@ -41,6 +44,25 @@ class ReactAgentFactoryTest {
         assertThat(agent).isInstanceOf(ReactAgent.class);
         assertThat(agent.name()).isEqualTo("assistant");
         assertThat(context.getModelName()).isEqualTo("mock-chat");
+    }
+
+    @Test
+    void quotaGuardBlocksModelCall() {
+        AgentDefinitionEntity definition = definition(1L, "assistant", AgentType.SINGLE, List.of());
+        ReactAgentFactory factory = new ReactAgentFactory(toolRegistry, repositoryStub(List.of()),
+                providerStub(null), providerStub(com.agentforge.agent.support.QuotaServiceStubs.alwaysExceeded()),
+                new ObjectMapper());
+        RunContext context = context();
+        Agent agent = factory.build(definition, context);
+
+        // SAA 的 AgentLlmNode 会把模型异常吞成 AssistantMessage，额度异常以运行上下文留痕为准
+        try {
+            ((ReactAgent) agent).call("你好");
+        } catch (Exception ignored) {
+            // 不同 SAA 版本可能直接抛出，两种行为都算额度拦截生效
+        }
+        assertThat(context.getQuotaError()).isNotNull();
+        assertThat(context.getQuotaError().getCode()).isEqualTo(42901);
     }
 
     @Test
@@ -95,9 +117,8 @@ class ReactAgentFactoryTest {
     }
 
     private ReactAgentFactory factory(List<AgentDefinitionEntity> subAgents) {
-        AgentDefinitionRepository repository = repositoryStub(subAgents);
-        ObjectProvider<ModelProviderFactory> provider = providerStub();
-        return new ReactAgentFactory(toolRegistry, repository, provider, new ObjectMapper());
+        return new ReactAgentFactory(toolRegistry, repositoryStub(subAgents), providerStub(null),
+                providerStub(null), new ObjectMapper());
     }
 
     private AgentDefinitionRepository repositoryStub(List<AgentDefinitionEntity> subAgents) {
@@ -113,15 +134,15 @@ class ReactAgentFactoryTest {
     }
 
     @SuppressWarnings("unchecked")
-    private ObjectProvider<ModelProviderFactory> providerStub() {
+    private <T> ObjectProvider<T> providerStub(T bean) {
         InvocationHandler handler = (proxy, method, args) -> switch (method.getName()) {
-            case "getIfAvailable", "getIfUnique", "getObject" -> null;
-            case "toString" -> "ModelProviderFactoryProviderStub";
+            case "getIfAvailable", "getIfUnique", "getObject" -> bean;
+            case "toString" -> "ObjectProviderStub";
             case "hashCode" -> System.identityHashCode(proxy);
             case "equals" -> proxy == args[0];
             default -> defaultValue(method.getReturnType());
         };
-        return (ObjectProvider<ModelProviderFactory>) Proxy.newProxyInstance(
+        return (ObjectProvider<T>) Proxy.newProxyInstance(
                 getClass().getClassLoader(), new Class<?>[]{ObjectProvider.class}, handler);
     }
 
