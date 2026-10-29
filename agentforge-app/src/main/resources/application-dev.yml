@@ -24,3 +24,8 @@ management:
 agentforge:
   memory:
     redis-enabled: false
+  quota:
+    # 额度每日限额按该时区的自然日重置
+    zone: Asia/Shanghai
+    # 超级管理员默认不受 Token 额度限制（契约 §2.7）
+    bypass-super-admin: true

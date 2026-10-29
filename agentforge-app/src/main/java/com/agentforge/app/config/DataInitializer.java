@@ -14,13 +14,18 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Profile;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
 /**
  * dev 环境默认管理员种子：仅 dev profile 生效，用户已存在则跳过，
  * 密码可由 AGENTFORGE_ADMIN_PASSWORD 覆盖；生产不写入任何默认账号。
+ * 同时为管理员幂等初始化 ENTERPRISE 额度账户，V7 迁移未执行时只告警不阻塞启动。
  */
 @Slf4j
 @Component
@@ -33,6 +38,7 @@ public class DataInitializer implements ApplicationRunner {
     private final RoleRepository roleRepository;
     private final UserRoleRepository userRoleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JdbcTemplate jdbcTemplate;
 
     @Override
     @Transactional
@@ -46,8 +52,10 @@ public class DataInitializer implements ApplicationRunner {
             return;
         }
         String email = authProperties.getSeedAdminEmail();
-        if (userRepository.existsByEmail(email)) {
+        UserEntity existing = userRepository.findByEmail(email).orElse(null);
+        if (existing != null) {
             log.info("dev 管理员已存在，跳过 seed email={}", email);
+            ensureAdminQuota(existing.getId());
             return;
         }
         RoleEntity superAdmin = roleRepository.findByTenantIdAndCode(TenantContext.DEFAULT_TENANT_ID, "SUPER_ADMIN")
@@ -68,5 +76,33 @@ public class DataInitializer implements ApplicationRunner {
         userRoleRepository.save(new UserRoleEntity(admin.getId(), superAdmin.getId()));
         log.info("dev 管理员已创建 email={} username={} roles=[SUPER_ADMIN]（密码来自配置，不在日志中打印）",
                 email, admin.getUsername());
+        ensureAdminQuota(admin.getId());
+    }
+
+    /**
+     * 幂等确保管理员有额度账户：已有记录直接返回，无 ENTERPRISE 套餐或表不存在时只告警。
+     */
+    private void ensureAdminQuota(Long userId) {
+        try {
+            Integer existing = jdbcTemplate.queryForObject(
+                    "select count(*) from ai_user_quota where user_id = ?", Integer.class, userId);
+            if (existing != null && existing > 0) {
+                return;
+            }
+            List<Long> tierIds = jdbcTemplate.queryForList(
+                    "select id from ai_quota_tier where code = 'ENTERPRISE' and enabled = true", Long.class);
+            if (tierIds.isEmpty()) {
+                log.warn("未找到 ENTERPRISE 套餐，跳过 dev 管理员额度初始化（检查 V7 迁移是否已执行）");
+                return;
+            }
+            LocalDateTime now = LocalDateTime.now();
+            jdbcTemplate.update(
+                    "insert into ai_user_quota (tenant_id, user_id, tier_id, granted_tokens, created_at, updated_at, version)"
+                            + " values (?, ?, ?, 0, ?, ?, 0)",
+                    TenantContext.DEFAULT_TENANT_ID, userId, tierIds.get(0), now, now);
+            log.info("dev 管理员额度已初始化 userId={} tier=ENTERPRISE", userId);
+        } catch (Exception ex) {
+            log.warn("初始化 dev 管理员额度失败（V7 迁移可能未执行）: {}", ex.getMessage());
+        }
     }
 }

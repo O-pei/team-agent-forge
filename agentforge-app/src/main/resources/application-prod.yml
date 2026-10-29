@@ -29,3 +29,8 @@ agentforge:
     key: ${AGENTFORGE_CRYPTO_KEY}
   memory:
     redis-enabled: ${AGENTFORGE_REDIS_ENABLED:true}
+  quota:
+    # 额度每日限额按该时区的自然日重置
+    zone: Asia/Shanghai
+    # 超级管理员默认不受 Token 额度限制（契约 §2.7）
+    bypass-super-admin: true

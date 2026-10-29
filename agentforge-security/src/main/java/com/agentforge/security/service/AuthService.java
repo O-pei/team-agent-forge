@@ -235,30 +235,33 @@ public class AuthService {
 
     private static List<MenuItem> buildMenus(Set<String> permissions) {
         List<MenuItem> menus = new ArrayList<>();
-        menus.add(new MenuItem("dashboard", "概览", "/dashboard"));
+        menus.add(new MenuItem("dashboard", "概览", "/dashboard", "Odometer", null));
         if (permissions.contains("agent:read")) {
-            menus.add(new MenuItem("agent", "Agent 管理", "/agents"));
+            menus.add(new MenuItem("agent", "Agent 管理", "/agents", "Cpu", "agent:read"));
         }
         if (permissions.contains("rag:read")) {
-            menus.add(new MenuItem("rag", "知识库", "/knowledge"));
+            menus.add(new MenuItem("rag", "知识库", "/knowledge", "Collection", "rag:read"));
         }
         if (permissions.contains("datasource:read")) {
-            menus.add(new MenuItem("datasource", "数据源", "/datasources"));
+            menus.add(new MenuItem("datasource", "数据源", "/datasources", "Coin", "datasource:read"));
         }
         if (permissions.contains("model:read")) {
-            menus.add(new MenuItem("model", "模型配置", "/models"));
+            menus.add(new MenuItem("model", "模型配置", "/models", "Setting", "model:read"));
         }
         if (permissions.contains("memory:read")) {
-            menus.add(new MenuItem("memory", "记忆管理", "/memory"));
+            menus.add(new MenuItem("memory", "记忆管理", "/memory", "Memo", "memory:read"));
         }
         if (permissions.contains("audit:read")) {
-            menus.add(new MenuItem("audit", "审计日志", "/audit"));
+            menus.add(new MenuItem("audit", "审计日志", "/audit", "DataAnalysis", "audit:read"));
         }
         if (permissions.contains("user:read")) {
-            menus.add(new MenuItem("user", "用户管理", "/users"));
+            menus.add(new MenuItem("user", "用户管理", "/users", "User", "user:read"));
         }
         if (permissions.contains("role:read")) {
-            menus.add(new MenuItem("role", "角色权限", "/roles"));
+            menus.add(new MenuItem("role", "角色权限", "/roles", "Lock", "role:read"));
+        }
+        if (permissions.contains("quota:read")) {
+            menus.add(new MenuItem("quota", "额度管理", "/admin/quota", "Coin", "quota:read"));
         }
         return menus;
     }

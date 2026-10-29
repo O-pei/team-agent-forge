@@ -2,6 +2,7 @@ package com.agentforge.app.web;
 
 import com.agentforge.common.api.ApiResponse;
 import com.agentforge.common.exception.BizException;
+import com.agentforge.common.exception.QuotaExceededException;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -21,7 +22,7 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 
 /**
- * 全局异常处理：所有异常统一转为 {@link ApiResponse}，HTTP 状态与业务码语义保持一致。
+ * 全局异常处理：所有异常统一转为 ApiResponse，HTTP 状态与业务码语义保持一致。
  */
 @Slf4j
 @RestControllerAdvice
@@ -31,6 +32,16 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleBizException(BizException exception) {
         log.warn("业务异常 code={} message={}", exception.getCode(), exception.getMessage());
         return ResponseEntity.status(statusOf(exception.getCode()))
+                .body(ApiResponse.fail(exception.getCode(), exception.getMessage()));
+    }
+
+    /**
+     * Token 额度用尽：固定返回 HTTP 429 + 业务码 42901。
+     */
+    @ExceptionHandler(QuotaExceededException.class)
+    public ResponseEntity<ApiResponse<Void>> handleQuotaExceeded(QuotaExceededException exception) {
+        log.warn("Token 额度不足 message={}", exception.getMessage());
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                 .body(ApiResponse.fail(exception.getCode(), exception.getMessage()));
     }
 
@@ -116,7 +127,7 @@ public class GlobalExceptionHandler {
 
     /**
      * 业务码 -> HTTP 状态：
-     * 401xx → 401、403xx → 403、404xx → 404、409xx → 409、42900/40202 → 429、
+     * 401xx → 401、403xx → 403、404xx → 404、409xx → 409、42900/42901/40202 → 429、
      * 50000 → 500、5xxxx → 503、其余 4xxxx → 400。
      */
     static HttpStatus statusOf(int code) {
@@ -135,7 +146,7 @@ public class GlobalExceptionHandler {
         if (code >= 40900 && code < 41000) {
             return HttpStatus.CONFLICT;
         }
-        if (code == 42900 || code == 40202) {
+        if (code == 42900 || code == 42901 || code == 40202) {
             return HttpStatus.TOO_MANY_REQUESTS;
         }
         if (code == 50000) {
