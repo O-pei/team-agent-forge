@@ -12,7 +12,7 @@ import type {
 } from '@/types'
 
 export const quotaApi = {
-  me() {
+  getMyQuota() {
     return http.get<QuotaStatus>('/quota/me')
   },
   listTiers() {
@@ -27,19 +27,19 @@ export const quotaApi = {
   deleteTier(id: number | string) {
     return http.delete<void>(`/quota/tiers/${id}`)
   },
-  listUsers(params: QuotaUserQuery) {
+  listUserQuotas(params: QuotaUserQuery) {
     return http.get<PageResult<UserQuotaRow>>('/quota/users', { params })
   },
-  updateUser(userId: number | string, data: UserQuotaUpdateRequest) {
+  updateUserQuota(userId: number | string, data: UserQuotaUpdateRequest) {
     return http.put<UserQuotaRow>(`/quota/users/${userId}`, data)
   },
-  resetUser(userId: number | string) {
+  resetUserQuota(userId: number | string) {
     return http.delete<void>(`/quota/users/${userId}/override`)
   },
-  grant(userId: number | string, data: QuotaGrantRequest) {
+  grantTokens(userId: number | string, data: QuotaGrantRequest) {
     return http.post<void>(`/quota/users/${userId}/grant`, data)
   },
-  grants(userId: number | string, params: { page?: number; size?: number }) {
+  listGrants(userId: number | string, params: { page?: number; size?: number }) {
     return http.get<PageResult<GrantRecord>>(`/quota/users/${userId}/grants`, { params })
   },
 }

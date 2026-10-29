@@ -217,7 +217,7 @@ const quotaText = computed(() => {
 
 async function loadQuota(): Promise<void> {
   try {
-    const result = await withMock('我的额度', () => quotaApi.me(), () => mockQuotaStatus())
+    const result = await withMock('我的额度', () => quotaApi.getMyQuota(), () => mockQuotaStatus())
     quota.value = result.data
     const current = result.data
     quotaExhausted.value =

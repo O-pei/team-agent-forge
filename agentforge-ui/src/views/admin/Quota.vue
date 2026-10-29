@@ -460,7 +460,7 @@ async function loadUsers(target = page.value): Promise<void> {
   userLoading.value = true
   try {
     const params = { page: target, size: size.value, keyword: keyword.value.trim() }
-    const result = await withMock('用户额度', () => quotaApi.listUsers(params), () => mockUserQuotas(target, size.value, keyword.value))
+    const result = await withMock('用户额度', () => quotaApi.listUserQuotas(params), () => mockUserQuotas(target, size.value, keyword.value))
     userQuotas.value = result.data.records
     total.value = result.data.total
   } catch (error) {
@@ -485,7 +485,7 @@ async function submitUserQuota(): Promise<void> {
   try {
     await withMock(
       `覆盖额度 #${target.userId}`,
-      () => quotaApi.updateUser(target.userId, { ...userForm }),
+      () => quotaApi.updateUserQuota(target.userId, { ...userForm }),
       () => ({
         ...target,
         tierId: userForm.tierId,
@@ -510,7 +510,7 @@ async function resetUserQuota(row: any): Promise<void> {
     return
   }
   try {
-    await withMock(`清除覆盖 #${row.userId}`, () => quotaApi.resetUser(row.userId), () => undefined)
+    await withMock(`清除覆盖 #${row.userId}`, () => quotaApi.resetUserQuota(row.userId), () => undefined)
     ElMessage.success('已恢复继承套餐')
     await loadUsers(page.value)
   } catch (error) {
@@ -536,7 +536,7 @@ async function submitGrant(): Promise<void> {
   try {
     await withMock(
       `分配 Token #${target.userId}`,
-      () => quotaApi.grant(target.userId, { amount: grantForm.amount, reason: grantForm.reason }),
+      () => quotaApi.grantTokens(target.userId, { amount: grantForm.amount, reason: grantForm.reason }),
       () => undefined,
     )
     ElMessage.success(`已分配 ${formatNumber(grantForm.amount)} Token`)
@@ -564,7 +564,7 @@ async function loadGrants(target: number): Promise<void> {
   try {
     const result = await withMock(
       `分配流水 #${grantUserId.value}`,
-      () => quotaApi.grants(grantUserId.value, { page: target, size: 10 }),
+      () => quotaApi.listGrants(grantUserId.value, { page: target, size: 10 }),
       () => mockGrants(grantUserId.value, target, 10),
     )
     grants.value = result.data.records
