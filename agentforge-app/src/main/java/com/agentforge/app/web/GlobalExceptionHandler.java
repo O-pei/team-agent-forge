@@ -6,6 +6,7 @@ import com.agentforge.common.exception.QuotaExceededException;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.access.AccessDeniedException;
@@ -37,11 +38,13 @@ public class GlobalExceptionHandler {
 
     /**
      * Token 额度用尽：固定返回 HTTP 429 + 业务码 42901。
+     * 显式指定 JSON，避免 SSE 请求（Accept: text/event-stream）触发内容协商失败。
      */
     @ExceptionHandler(QuotaExceededException.class)
     public ResponseEntity<ApiResponse<Void>> handleQuotaExceeded(QuotaExceededException exception) {
         log.warn("Token 额度不足 message={}", exception.getMessage());
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .contentType(MediaType.APPLICATION_JSON)
                 .body(ApiResponse.fail(exception.getCode(), exception.getMessage()));
     }
 

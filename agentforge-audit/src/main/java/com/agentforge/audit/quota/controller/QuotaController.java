@@ -123,10 +123,10 @@ public class QuotaController {
      */
     @PostMapping("/users/{userId}/grant")
     @PreAuthorize("hasAuthority('quota:write')")
-    public ApiResponse<Void> grantTokens(@PathVariable("userId") Long userId,
-                                         @Valid @RequestBody QuotaGrantCommand cmd) {
-        quotaService.grantTokens(userId, cmd.amount(), cmd.reason(), SecurityUtils.currentUserId());
-        return ApiResponse.ok(null);
+    public ApiResponse<UserQuotaView> grantTokens(@PathVariable("userId") Long userId,
+                                                  @Valid @RequestBody QuotaGrantCommand cmd) {
+        return ApiResponse.ok(
+                quotaService.grantTokens(userId, cmd.amount(), cmd.reason(), SecurityUtils.currentUserId()));
     }
 
     /**
