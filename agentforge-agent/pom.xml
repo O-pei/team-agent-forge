@@ -23,6 +23,10 @@
         </dependency>
         <dependency>
             <groupId>com.agentforge</groupId>
+            <artifactId>agentforge-security</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.agentforge</groupId>
             <artifactId>agentforge-memory</artifactId>
         </dependency>
         <dependency>
