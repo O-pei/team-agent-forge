@@ -48,7 +48,8 @@ const routes: RouteRecordRaw[] = [
     children: [
       {
         path: '',
-        redirect: '/dashboard',
+        // 按权限选择落地页：有 audit:read 进工作台，否则进对话；权限未加载时由守卫二次校正
+        redirect: () => useAuthStore().homePath,
       },
       {
         path: 'dashboard',
@@ -152,7 +153,7 @@ router.beforeEach(async (to) => {
 
   if (to.meta.public) {
     if ((to.name === 'login' || to.name === 'register') && auth.isLoggedIn && auth.loaded) {
-      return { path: '/dashboard' }
+      return { path: auth.homePath }
     }
     return true
   }
@@ -168,6 +169,11 @@ router.beforeEach(async (to) => {
       auth.resetSession()
       return { path: '/login', query: { redirect: to.fullPath } }
     }
+  }
+
+  // 直接访问根路径时 redirect 先于 /auth/me 执行（此时权限为空会误判），加载完成后再按权限校正落地页
+  if (to.redirectedFrom?.path === '/' && to.path !== auth.homePath) {
+    return { path: auth.homePath }
   }
 
   if (to.meta.permission && !auth.hasPermission(to.meta.permission)) {

@@ -45,7 +45,7 @@
         </el-table-column>
         <el-table-column label="操作" width="240" fixed="right">
           <template #default="{ row }">
-            <el-button link type="success" :loading="testingId === row.id" @click="test(row)">测试</el-button>
+            <el-button v-perm="'model:write'" link type="success" :loading="testingId === row.id" @click="test(row)">测试</el-button>
             <el-button v-perm="'model:write'" link type="primary" @click="openEdit(row)">编辑</el-button>
             <el-button v-perm="'model:write'" link type="danger" @click="remove(row)">删除</el-button>
           </template>

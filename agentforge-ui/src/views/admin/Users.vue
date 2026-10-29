@@ -65,7 +65,10 @@
           <template #default="{ row }">
             <el-button v-perm="'user:write'" link type="primary" @click="openEdit(row)">编辑</el-button>
             <el-button v-perm="'user:write'" link type="warning" @click="openReset(row)">重置密码</el-button>
-            <el-button link type="info" @click="openLogs(row)">登录日志</el-button>
+            <!-- 契约：GET /login-logs 要求 audit:read；无该权限时隐藏入口，避免点开 403 -->
+            <el-button v-if="auth.hasPermission('audit:read')" link type="info" @click="openLogs(row)">
+              登录日志
+            </el-button>
             <el-button v-perm="'user:write'" link type="danger" @click="toggleStatus(row)">
               {{ row.status === 'DISABLED' ? '启用' : '禁用' }}
             </el-button>
@@ -172,12 +175,15 @@ import type { RoleInfo, UserCreateRequest, UserInfo, UserUpdateRequest } from '@
 import { formatDateTime } from '@/utils/format'
 import { isFallbackError } from '@/utils/request'
 import { mockRoles, mockUsers, withMock } from '@/utils/mock'
+import { useAuthStore } from '@/stores/auth'
 
 const ROLE_LABELS: Record<string, string> = {
   SUPER_ADMIN: '超级管理员',
   ADMIN: '管理员',
   USER: '普通用户',
 }
+
+const auth = useAuthStore()
 
 const loading = ref(false)
 const saving = ref(false)

@@ -45,7 +45,7 @@
         </el-table-column>
         <el-table-column label="操作" width="300" fixed="right">
           <template #default="{ row }">
-            <el-button link type="success" :loading="testingId === row.id" @click="test(row)">测试连接</el-button>
+            <el-button v-perm="'datasource:write'" link type="success" :loading="testingId === row.id" @click="test(row)">测试连接</el-button>
             <el-button link type="primary" @click="openSchema(row)">表结构</el-button>
             <el-button v-perm="'datasource:query'" link type="primary" @click="openQuery(row)">SQL 查询</el-button>
             <el-button v-perm="'datasource:write'" link @click="openEdit(row)">编辑</el-button>

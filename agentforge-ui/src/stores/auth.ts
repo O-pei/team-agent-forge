@@ -38,6 +38,12 @@ export const useAuthStore = defineStore('auth', () => {
   const roleLabels = computed(() => roles.value.map((role) => ROLE_LABELS[role] || role))
   const permCount = computed(() => permissions.value.length)
 
+  /**
+   * 登录后的默认落地页：有审计权限进工作台，否则进对话（USER 无 audit:read，默认 /chat）。
+   * 供登录成功跳转、根路径重定向与路由守卫复用。
+   */
+  const homePath = computed(() => (hasPermission('audit:read') ? '/dashboard' : '/chat'))
+
   /** 权限判断：无参数=通过；数组=任一命中；SUPER_ADMIN/演示身份直接放行 */
   function hasPermission(code?: string | string[] | null): boolean {
     if (!code) return true
@@ -153,6 +159,7 @@ export const useAuthStore = defineStore('auth', () => {
     displayName,
     roleLabels,
     permCount,
+    homePath,
     hasPermission,
     hasRole,
     fetchMe,

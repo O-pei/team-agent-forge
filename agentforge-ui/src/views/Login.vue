@@ -102,7 +102,7 @@ async function submit(): Promise<void> {
   try {
     const result = await auth.login({ account: form.account.trim(), password: form.password })
     ElMessage.success(result.mock ? '后端未就绪，已进入 DEV 演示模式' : '登录成功')
-    const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/dashboard'
+    const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : auth.homePath
     await router.replace(redirect)
   } catch (error) {
     ElMessage.error(getErrorMessage(error))
