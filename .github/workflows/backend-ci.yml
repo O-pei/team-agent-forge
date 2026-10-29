@@ -1,0 +1,77 @@
+name: backend-ci
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'agentforge-*/**'
+      - 'pom.xml'
+      - '.github/workflows/backend-ci.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'agentforge-*/**'
+      - 'pom.xml'
+      - '.github/workflows/backend-ci.yml'
+
+concurrency:
+  group: backend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Build and test
+        run: mvn -B -ntp verify
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports
+          path: '**/target/surefire-reports/**'
+          retention-days: 7
+          if-no-files-found: ignore
+
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: agentforge-ui
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check frontend exists
+        id: exists
+        run: |
+          if [ -f package.json ]; then echo "exists=true" >> "$GITHUB_OUTPUT"; else echo "exists=false" >> "$GITHUB_OUTPUT"; fi
+
+      - uses: pnpm/action-setup@v4
+        if: steps.exists.outputs.exists == 'true'
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        if: steps.exists.outputs.exists == 'true'
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: agentforge-ui/pnpm-lock.yaml
+
+      - name: Install and build
+        if: steps.exists.outputs.exists == 'true'
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm build

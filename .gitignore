@@ -1,0 +1,35 @@
+# Build
+target/
+*.class
+*.jar
+*.war
+.mvn/wrapper/maven-wrapper.jar
+
+# Local environment (never commit)
+.m2repo/
+.data/
+.build-check/
+tools/
+.env
+.env.*
+*.log
+logs/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+.DS_Store
+
+# Frontend
+node_modules/
+dist/
+dist-ssr/
+*.local
+.eslintcache
+stats.html
+
+# Test / coverage
+coverage/
+*.hprof
