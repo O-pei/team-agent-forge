@@ -118,6 +118,24 @@ public class RunContext {
         }
     }
 
+    /**
+     * 流式调用结束后回填 MODEL 步骤的真实输出：拦截器在拦截阶段只能拿到 Flux，
+     * 这里把最后一个占位步骤的 output 替换为最终文本。
+     */
+    public void resolveStreamOutput(String text) {
+        if (text == null || text.isEmpty()) {
+            return;
+        }
+        for (int i = steps.size() - 1; i >= 0; i--) {
+            StepRecord record = steps.get(i);
+            if ("MODEL".equals(record.stepType()) && RunModelInterceptor.STREAM_PLACEHOLDER.equals(record.output())) {
+                steps.set(i, new StepRecord(record.seqNo(), record.agentName(), record.nodeName(),
+                        record.stepType(), record.toolName(), record.input(), text, record.status(), record.elapsedMs()));
+                return;
+            }
+        }
+    }
+
     public int nextCitationIndex() {
         return citationIndex.incrementAndGet();
     }

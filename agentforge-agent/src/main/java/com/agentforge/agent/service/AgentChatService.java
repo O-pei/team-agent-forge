@@ -112,6 +112,7 @@ public class AgentChatService {
                 answer.append(fallback);
             }
             String finalAnswer = answer.toString();
+            context.resolveStreamOutput(finalAnswer);
             context.emit(AgentEvent.MESSAGE_COMPLETED, new AgentEvents.MessageCompleted(finalAnswer));
             context.emit(AgentEvent.USAGE, context.usageSnapshot());
             boolean cancelled = context.isCancelled();

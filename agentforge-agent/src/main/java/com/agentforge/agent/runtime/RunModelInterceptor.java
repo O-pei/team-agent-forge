@@ -17,6 +17,9 @@ import org.springframework.ai.chat.model.ChatResponse;
 @RequiredArgsConstructor
 public class RunModelInterceptor extends ModelInterceptor {
 
+    /** 流式调用占位符，流结束后由 RunContext.resolveStreamOutput 回填为真实文本。 */
+    public static final String STREAM_PLACEHOLDER = "[流式输出]";
+
     private final RunContext context;
 
     @Override
@@ -63,7 +66,18 @@ public class RunModelInterceptor extends ModelInterceptor {
         if (message instanceof AssistantMessage assistantMessage) {
             return truncate(assistantMessage.getText(), 4000);
         }
-        return truncate(String.valueOf(message), 2000);
+        if (message instanceof org.reactivestreams.Publisher<?>) {
+            // 流式调用：此处只有 Flux，真实文本在流结束后由 RunContext.resolveStreamOutput 回填
+            return STREAM_PLACEHOLDER;
+        }
+        if (message == null) {
+            return "";
+        }
+        String text = String.valueOf(message);
+        if ("FluxHandle".equals(text) || text.startsWith("reactor.core.publisher")) {
+            return STREAM_PLACEHOLDER;
+        }
+        return truncate(text, 4000);
     }
 
     private static String truncate(String text, int max) {
