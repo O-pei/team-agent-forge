@@ -1,6 +1,7 @@
 package com.agentforge.app.config;
 
 import com.agentforge.security.filter.JwtAuthenticationFilter;
+import jakarta.servlet.DispatcherType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -48,6 +49,10 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
                 .authorizeHttpRequests(authorize -> {
+                    // SSE / DeferredResult 会以 ASYNC 类型二次进入过滤器链；首次 REQUEST 已完成鉴权，
+                    // 异步分发若再走 anyRequest().authenticated() 会因安全上下文未传播而被 403 拒绝，
+                    // 表现为「响应已提交后抛 AuthorizationDeniedException」+ 客户端连接被 terminated。
+                    authorize.dispatcherTypeMatchers(DispatcherType.ASYNC, DispatcherType.ERROR).permitAll();
                     authorize.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll();
                     authorize.requestMatchers(
                             "/api/v1/auth/email-code",
