@@ -14,7 +14,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * 一次模型调用的 Token 用量明细（表 {@code ai_token_usage}，日志表不维护 version/updated_at）。
+ * Token 用量明细实体（ai_token_usage 表），日志表不维护 version 和 updated_at。
  */
 @Getter
 @Setter

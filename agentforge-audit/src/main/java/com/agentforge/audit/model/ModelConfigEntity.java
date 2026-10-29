@@ -8,7 +8,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * 模型配置（表 {@code ai_model}）。API Key 以 AES-GCM 密文入库，接口不回显。
+ * 模型配置实体（ai_model 表）。API Key 以 AES-GCM 密文入库，接口不回显。
  */
 @Getter
 @Setter

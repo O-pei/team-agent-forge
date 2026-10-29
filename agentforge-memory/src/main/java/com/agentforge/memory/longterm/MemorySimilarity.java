@@ -5,9 +5,7 @@ import java.util.Locale;
 import java.util.Set;
 
 /**
- * 词面相似度：中文按字符 + bigram，英文按单词，计算 Jaccard 相似度。
- *
- * <p>不依赖向量库，保证无 Redis/无 Embedding 的零配置环境也能按关键词召回长期记忆。</p>
+ * 词面相似度：中文按字符和 bigram、英文按单词计算 Jaccard 相似度，不依赖向量库，零配置环境也能按关键词召回。
  */
 public final class MemorySimilarity {
 

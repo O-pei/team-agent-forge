@@ -14,9 +14,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 进程内会话记忆（Redis 不可用时的兜底实现）：保留最近 200 条、TTL 7 天（惰性清理）。
- *
- * <p>无 Redis 的部署下重启即丢失，属于可接受的降级行为。</p>
+ * 进程内会话记忆：Redis 不可用时的兜底实现，保留最近 200 条、TTL 7 天并惰性清理，重启即丢失。
  */
 public class InMemoryMemoryStore implements MemoryStore {
 

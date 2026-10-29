@@ -18,11 +18,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 
 /**
- * 回归测试：写入 N 条 usage 后 summary / overview 必须非零。
- *
- * <p>覆盖此前的真实 bug：{@code TokenUsageRepository.summarize} 用单元素 {@code Object[]}
- * 接收多列聚合行，被 Spring Data 当作“行数组”包装（长度 1 < 5），命中
- * {@code UsageQueryService.summary} 的兜底分支，导致 summary/overview 全 0。</p>
+ * 回归测试：写入 usage 后 summary 和 overview 必须非零。
+ * 覆盖 TokenUsageRepository.summarize 用单元素 Object[] 接收多列聚合行、被 Spring Data 包装后长度不足导致全 0 的 bug。
  */
 @DataJpaTest
 @EntityScan("com.agentforge.audit.model")

@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * {@link UsageRecordingChatModel} 采集语义测试：流式累加、缺失 usage 估算、上下文透传。
+ * UsageRecordingChatModel 采集语义测试：流式累加、缺失 usage 估算、上下文透传。
  */
 class UsageRecordingChatModelTest {
 

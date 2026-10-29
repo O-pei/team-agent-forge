@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Redis 长期记忆存储：Hash 结构 {@code agentforge:memory:facts:{tenant}:{user}}，TTL 7 天。
+ * Redis 长期记忆存储：Hash 结构 agentforge:memory:facts:{tenant}:{user}，TTL 7 天。
  */
 @Slf4j
 @RequiredArgsConstructor

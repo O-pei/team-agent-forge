@@ -10,7 +10,7 @@ import lombok.Setter;
 import java.math.BigDecimal;
 
 /**
- * 模型单价（表 {@code ai_model_price}）：按 1K token 计价，用于实时估算成本。
+ * 模型单价实体（ai_model_price 表）：按 1K token 计价，用于实时估算成本。
  */
 @Getter
 @Setter

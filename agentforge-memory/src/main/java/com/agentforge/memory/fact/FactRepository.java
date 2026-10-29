@@ -3,7 +3,7 @@ package com.agentforge.memory.fact;
 import java.util.List;
 
 /**
- * 长期记忆存储抽象：InMemory / Redis 两种实现由 {@code MemoryConfig} 按启动探测结果装配。
+ * 长期记忆存储抽象：InMemory 与 Redis 两种实现由 MemoryConfig 按启动探测结果装配。
  */
 public interface FactRepository {
 

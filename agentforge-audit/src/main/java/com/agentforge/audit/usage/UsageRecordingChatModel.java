@@ -19,14 +19,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * ChatModel 装饰器：全量采集 Token usage 并异步上报 {@link TokenUsageService}。
- *
- * <ul>
- *   <li>非流式：直接取响应 metadata 中的 usage，缺失时按 prompt/回复字符数估算；</li>
- *   <li>流式：累加输出文本，取最后一个带有效 usage 的 chunk（Spring AI 约定流式只有最后一块带 usage），
- *       缺失时按累加文本字符数估算；</li>
- *   <li>采集失败（含异步上报异常）只记日志，绝不影响主调用链路。</li>
- * </ul>
+ * ChatModel 装饰器：全量采集 Token usage 并异步上报 TokenUsageService。
+ * 非流式取响应 metadata 中的 usage，缺失时按字符数估算；
+ * 流式累加输出文本并取最后一个带有效 usage 的 chunk（Spring AI 流式只有最后一块带 usage），缺失时按累加文本估算；
+ * 采集失败只记日志，不影响主调用链路。
  */
 public class UsageRecordingChatModel implements ChatModel {
 

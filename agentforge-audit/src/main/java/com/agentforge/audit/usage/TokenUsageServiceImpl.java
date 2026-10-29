@@ -14,9 +14,8 @@ import java.math.RoundingMode;
 import java.util.Optional;
 
 /**
- * Token 用量上报实现：异步落库（{@code tokenUsageExecutor}），任何异常只记日志，不影响模型调用。
- *
- * <p>成本按 {@code ai_model_price} 的每 1K token 单价估算，无价格记录时按 0 处理。</p>
+ * Token 用量上报实现：异步落库到 tokenUsageExecutor，异常只记日志，不影响模型调用。
+ * 成本按 ai_model_price 的每 1K token 单价估算，无价格记录时按 0 处理。
  */
 @Slf4j
 @Service

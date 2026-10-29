@@ -88,8 +88,7 @@ public class ModelConfigService {
     }
 
     /**
-     * 连通性测试：使用工厂构建的真实/降级模型发送 {@code ping}，返回延迟与回显。
-     * 失败不抛异常（返回 success=false），避免管理端把「模型不可用」当成接口错误。
+     * 连通性测试：用工厂构建的模型发送 ping，返回延迟与回显；失败不抛异常，返回 success=false。
      */
     public ModelTestResponse test(Long id) {
         ModelConfigEntity entity = find(id);

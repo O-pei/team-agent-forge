@@ -7,9 +7,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Redis 可用性探测结果：启动时探测一次，后续所有记忆组件共用同一决策，避免重复连接。
- *
- * <p>无 Redis 时（开发机默认）自动降级为 InMemory 实现，服务启动不受影响。</p>
+ * Redis 可用性探测：启动时探测一次，记忆组件共用同一结果，避免重复连接。
+ * 无 Redis 时（开发机默认）自动降级为 InMemory 实现，服务启动不受影响。
  */
 @Slf4j
 public final class MemoryRedisSupport {

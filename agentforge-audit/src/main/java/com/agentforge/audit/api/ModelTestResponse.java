@@ -1,7 +1,7 @@
 package com.agentforge.audit.api;
 
 /**
- * 模型连通性测试响应：发送 {@code ping}，返回延迟与模型回显。
+ * 模型连通性测试响应：返回延迟、模型回显与结果消息。
  */
 public record ModelTestResponse(
         boolean success,

@@ -21,14 +21,10 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 模型工厂实现：按数据库配置构建 Spring AI {@link ChatModel}。
- *
- * <ul>
- *   <li>MOCK / 无可用配置 / provider 未接入 / DASHSCOPE 无 API Key → {@link MockChatModel}（零配置可跑）；</li>
- *   <li>DASHSCOPE → {@code DashScopeChatModel}（API Key 从 AES-GCM 密文解密，仅在内存使用）；</li>
- *   <li>所有模型返回前统一用 {@link UsageRecordingChatModel} 包装，保证审计链路不漏；</li>
- *   <li>构建结果按 modelId 缓存，配置变更后由 {@link #evict(Long)} / {@link #evictAll()} 清理。</li>
- * </ul>
+ * 模型工厂实现：按数据库配置构建 Spring AI ChatModel。
+ * MOCK、无可用配置、provider 未接入或 DashScope 无 API Key 时回退 MockChatModel；
+ * DashScope Key 从 AES-GCM 密文解密，仅在内存使用；所有模型统一用 UsageRecordingChatModel 包装，保证审计链路不漏；
+ * 构建结果按 modelId 缓存，配置变更后由 evict 或 evictAll 清理。
  */
 @Slf4j
 @Component
@@ -81,14 +77,12 @@ public class ModelProviderFactoryImpl implements ModelProviderFactory {
                 Boolean.TRUE.equals(config.getEnabled()));
     }
 
-    /** 配置变更后清理单个模型缓存。 */
     public void evict(Long modelId) {
         if (modelId != null) {
             cache.remove(modelId);
         }
     }
 
-    /** 批量变更（默认模型切换等）后清理全部缓存。 */
     public void evictAll() {
         cache.clear();
     }

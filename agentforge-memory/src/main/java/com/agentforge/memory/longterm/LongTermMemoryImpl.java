@@ -12,9 +12,8 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * 长期记忆实现：保存事实/偏好，按词面相似度召回（Redis 不可用时自动落内存 Map）。
- *
- * <p>召回打分：{@code 0.7 * 词面相似度 + 0.3 * 置信度}；query 为空时按置信度与时间召回。</p>
+ * 长期记忆实现：保存事实与偏好，按词面相似度召回；Redis 不可用时落内存 Map。
+ * 召回分数为 0.7 乘词面相似度加 0.3 乘置信度，query 为空时按置信度与时间召回。
  */
 @Slf4j
 @Service

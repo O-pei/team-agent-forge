@@ -15,9 +15,8 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * 零依赖 Mock 模型：无 API Key 时保证全链路（对话、Token 审计、SSE）可跑。
- *
- * <p>返回可预测文本并模拟 usage；用于开发、演示与集成测试。</p>
+ * 零依赖 Mock 模型：无 API Key 时保证对话、Token 审计与 SSE 全链路可跑。
+ * 返回可预测文本并模拟 usage，用于开发、演示与集成测试。
  */
 public class MockChatModel implements ChatModel {
 
