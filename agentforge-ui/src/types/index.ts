@@ -589,3 +589,78 @@ export interface SseErrorEvent {
   code: number
   message: string
 }
+
+/* Token 额度 */
+
+export interface QuotaStatus {
+  userId: number | string
+  tierCode?: string
+  tierName?: string
+  dailyLimit: number
+  dailyUsed: number
+  dailyRemaining: number
+  totalLimit: number
+  totalUsed: number
+  totalRemaining: number
+  grantedTokens?: number
+  unlimited?: boolean
+  resetAt?: string
+}
+
+export interface QuotaTier {
+  id: number | string
+  code: string
+  name: string
+  description?: string
+  dailyTokenLimit: number
+  totalTokenLimit: number
+  sortOrder?: number
+  enabled?: boolean
+  builtin?: boolean
+  userCount?: number
+  createdAt?: string
+  updatedAt?: string
+}
+
+export interface QuotaTierRequest {
+  code?: string
+  name: string
+  description?: string
+  dailyTokenLimit: number
+  totalTokenLimit: number
+  sortOrder?: number
+  enabled?: boolean
+}
+
+export interface UserQuotaRow extends QuotaStatus {
+  username?: string
+  email?: string
+  nickname?: string
+  status?: string
+  tierId?: number | string | null
+}
+
+export interface UserQuotaUpdateRequest {
+  tierId?: number | string | null
+  dailyLimit?: number | null
+  totalLimit?: number | null
+}
+
+export interface QuotaGrantRequest {
+  amount: number
+  reason?: string
+}
+
+export interface GrantRecord {
+  id: number | string
+  userId?: number | string
+  username?: string
+  amount: number
+  reason?: string
+  operatorName?: string
+  createdAt?: string
+}
+
+export interface QuotaUserQuery extends PageQuery {
+  keyword?: string
+}

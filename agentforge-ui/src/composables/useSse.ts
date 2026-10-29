@@ -4,7 +4,7 @@
 import { computed, ref } from 'vue'
 import type { ChatRequest, UsageInfo } from '@/types'
 import { streamSse, isAbortError, type SseEvent } from '@/utils/sse'
-import { getErrorMessage, isFallbackError } from '@/utils/request'
+import { ApiError, getErrorMessage, isFallbackError } from '@/utils/request'
 import { mockEnabled, mockState } from '@/utils/mock'
 import { agentsApi } from '@/api/agents'
 
@@ -55,6 +55,7 @@ export function useSse() {
   const sessionId = ref('')
   const interrupted = ref<InterruptedInfo | null>(null)
   const errorMessage = ref('')
+  const errorCode = ref(0)
   const elapsedMs = ref(0)
 
   let controller: AbortController | null = null
@@ -75,6 +76,7 @@ export function useSse() {
     sessionId.value = ''
     interrupted.value = null
     errorMessage.value = ''
+    errorCode.value = 0
     elapsedMs.value = 0
     controller = null
   }
@@ -175,6 +177,7 @@ export function useSse() {
       }
       case 'error': {
         errorMessage.value = String(data.message ?? '运行失败')
+        errorCode.value = Number(data.code ?? 0)
         status.value = 'error'
         break
       }
@@ -212,6 +215,7 @@ export function useSse() {
       }
       status.value = 'error'
       errorMessage.value = getErrorMessage(error)
+      errorCode.value = error instanceof ApiError ? error.code : 0
     } finally {
       controller = null
     }
@@ -327,6 +331,7 @@ export function useSse() {
     sessionId,
     interrupted,
     errorMessage,
+    errorCode,
     elapsedMs,
     isStreaming,
     isMockStream,

@@ -119,6 +119,17 @@ const routes: RouteRecordRaw[] = [
         },
       },
       {
+        path: 'admin/quota',
+        name: 'admin-quota',
+        component: () => import('@/views/admin/Quota.vue'),
+        meta: {
+          title: '额度管理',
+          icon: 'Wallet',
+          permission: 'quota:read',
+          group: '系统管理',
+        },
+      },
+      {
         path: '403',
         name: 'forbidden',
         component: () => import('@/views/error/403.vue'),

@@ -14,6 +14,10 @@ import type {
   MeResult,
   ModelConfig,
   PermissionNode,
+  QuotaStatus,
+  QuotaTier,
+  UserQuotaRow,
+  GrantRecord,
   RoleInfo,
   SandboxExecuteResult,
   SandboxProviderInfo,
@@ -92,6 +96,8 @@ export const ALL_PERMISSIONS = [
   'role:read',
   'role:write',
   'audit:read',
+  'quota:read',
+  'quota:write',
   'model:read',
   'model:write',
   'agent:read',
@@ -655,6 +661,7 @@ export function mockPermissionTree(): PermissionNode[] {
     { name: 'Agent 管理', prefix: 'agent' },
     { name: '知识库', prefix: 'rag' },
     { name: '数据源', prefix: 'datasource' },
+    { name: '额度管理', prefix: 'quota' },
     { name: '记忆', prefix: 'memory' },
   ]
   let leafId = 1
@@ -696,6 +703,8 @@ function permissionLabel(code: string): string {
     'datasource:read': '查看数据源/Schema',
     'datasource:write': '维护数据源',
     'datasource:query': '执行只读 SQL/沙箱',
+    'quota:read': '查看额度配置与用量',
+    'quota:write': '调整额度并分配 Token',
     'memory:read': '查看记忆',
     'memory:write': '清理记忆',
   }
@@ -740,4 +749,141 @@ export function mockSandboxResult(language: string, code: string): SandboxExecut
     elapsedMs: 168,
     truncated: false,
   }
+}
+
+/* 额度 */
+
+const QUOTA_TIERS: QuotaTier[] = [
+  {
+    id: 1,
+    code: 'FREE',
+    name: '免费版',
+    description: '新用户默认套餐，额度较低',
+    dailyTokenLimit: 50_000,
+    totalTokenLimit: 500_000,
+    sortOrder: 1,
+    enabled: true,
+    builtin: true,
+    userCount: 4,
+    createdAt: iso(60 * 24 * 30),
+  },
+  {
+    id: 2,
+    code: 'PRO',
+    name: '专业版',
+    description: '日常研发与客服场景',
+    dailyTokenLimit: 500_000,
+    totalTokenLimit: 10_000_000,
+    sortOrder: 2,
+    enabled: true,
+    builtin: true,
+    userCount: 3,
+    createdAt: iso(60 * 24 * 30),
+  },
+  {
+    id: 3,
+    code: 'ENTERPRISE',
+    name: '企业版',
+    description: '不限额度，按量审计',
+    dailyTokenLimit: 0,
+    totalTokenLimit: 0,
+    sortOrder: 3,
+    enabled: true,
+    builtin: false,
+    userCount: 1,
+    createdAt: iso(60 * 24 * 12),
+  },
+]
+
+function nextResetAt(): string {
+  const next = new Date()
+  next.setHours(24, 0, 0, 0)
+  return next.toISOString().slice(0, 19)
+}
+
+export function mockQuotaTiers(): QuotaTier[] {
+  return QUOTA_TIERS.map((tier) => ({ ...tier }))
+}
+
+export function mockQuotaStatus(): QuotaStatus {
+  return {
+    userId: 1,
+    tierCode: 'PRO',
+    tierName: '专业版',
+    dailyLimit: 500_000,
+    dailyUsed: 128_400,
+    dailyRemaining: 371_600,
+    totalLimit: 10_000_000,
+    totalUsed: 3_842_000,
+    totalRemaining: 6_158_000,
+    grantedTokens: 200_000,
+    unlimited: false,
+    resetAt: nextResetAt(),
+  }
+}
+
+export function mockUserQuotas(
+  page = 1,
+  size = 10,
+  keyword = '',
+): { records: UserQuotaRow[]; total: number; page: number; size: number } {
+  const tierOf = (index: number): QuotaTier => QUOTA_TIERS[index % QUOTA_TIERS.length]
+  const all: UserQuotaRow[] = USERS.map((user, index) => {
+    const tier = tierOf(index % 3)
+    const tierId = tier.id
+    const dailyLimit = index === 5 ? 200_000 : tier.dailyTokenLimit
+    const totalLimit = index === 5 ? 2_000_000 : tier.totalTokenLimit
+    const unlimited = dailyLimit === 0 && totalLimit === 0
+    const dailyUsed = Math.round(pseudo(Number(user.id) + 7) * Math.max(dailyLimit, 120_000) * 0.6)
+    const totalUsed = Math.round(pseudo(Number(user.id) + 11) * Math.max(totalLimit, 1_000_000) * 0.5)
+    return {
+      userId: user.id,
+      username: user.username,
+      email: user.email,
+      nickname: user.nickname,
+      status: user.status,
+      tierId,
+      tierCode: tier.code,
+      tierName: tier.name,
+      dailyLimit,
+      dailyUsed,
+      dailyRemaining: unlimited ? -1 : Math.max(0, dailyLimit - dailyUsed),
+      totalLimit,
+      totalUsed,
+      totalRemaining: unlimited ? -1 : Math.max(0, totalLimit - totalUsed),
+      grantedTokens: index % 4 === 0 ? 200_000 : 0,
+      unlimited,
+      resetAt: nextResetAt(),
+    }
+  })
+  const key = keyword.trim().toLowerCase()
+  const filtered = key
+    ? all.filter(
+        (row) =>
+          (row.username || '').toLowerCase().includes(key) ||
+          (row.email || '').toLowerCase().includes(key) ||
+          (row.nickname || '').toLowerCase().includes(key),
+      )
+    : all
+  const start = (page - 1) * size
+  return { records: filtered.slice(start, start + size), total: filtered.length, page, size }
+}
+
+export function mockGrants(
+  userId: number | string,
+  page = 1,
+  size = 10,
+): { records: GrantRecord[]; total: number; page: number; size: number } {
+  const total = 6
+  const records: GrantRecord[] = Array.from({ length: total }).map((_, index) => ({
+    id: 5_000 + index,
+    userId,
+    username: pick(['admin', 'alice', 'bob', 'carol'], index),
+    amount: pick([100_000, 200_000, 500_000], index),
+    reason: pick(['月度额度补充', '活动临时加量', '客服峰值保障', '客户试用'], index),
+    operatorName: 'admin',
+    createdAt: iso(index * 60 * 6),
+  }))
+  const start = (page - 1) * size
+  return { records: records.slice(start, start + size), total, page, size }
 }

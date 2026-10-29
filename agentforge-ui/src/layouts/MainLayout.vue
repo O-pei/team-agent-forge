@@ -126,6 +126,7 @@ import {
   Setting,
   SwitchButton,
   User,
+  Wallet,
 } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 import { mockState } from '@/utils/mock'
@@ -158,6 +159,7 @@ const menu: MenuEntry[] = [
     children: [
       { path: '/admin/users', title: '用户管理', icon: User, permission: 'user:read' },
       { path: '/admin/roles', title: '角色权限', icon: Lock, permission: 'role:read' },
+      { path: '/admin/quota', title: '额度管理', icon: Wallet, permission: 'quota:read' },
     ],
   },
 ]

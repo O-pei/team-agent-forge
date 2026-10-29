@@ -6,6 +6,10 @@
         <p class="page-desc">与 Agent 流式对话 · SSE 增量输出、工具调用、知识库引用与 Token 用量</p>
       </div>
       <div class="toolbar">
+        <el-tag v-if="quota" :type="quotaExhausted ? 'danger' : 'info'" effect="plain" class="quota-badge">
+          <el-icon><Wallet /></el-icon>
+          {{ quotaText }}
+        </el-tag>
         <el-select v-model="agentId" placeholder="选择 Agent" style="width: 220px" :disabled="sse.isStreaming.value">
           <el-option v-for="agent in agents" :key="agent.id" :label="agent.name" :value="agent.id" />
         </el-select>
@@ -118,6 +122,13 @@
       </div>
 
       <div class="chat-input">
+        <div v-if="quotaExhausted" class="quota-exhausted">
+          <el-icon><WarningFilled /></el-icon>
+          <span>
+            额度已用尽，暂时无法继续对话。{{ quota?.resetAt ? `每日额度将于 ${formatDateTime(quota.resetAt)} 重置。` : '' }}
+          </span>
+          <el-button link type="primary" @click="loadQuota">刷新额度</el-button>
+        </div>
         <el-input
           v-model="input"
           type="textarea"
@@ -125,8 +136,8 @@
           resize="none"
           maxlength="4000"
           show-word-limit
-          placeholder="输入问题，Enter 发送，Shift+Enter 换行"
-          :disabled="sse.isStreaming.value || !agentId"
+          :placeholder="quotaExhausted ? '额度已用尽，暂不可发送' : '输入问题，Enter 发送，Shift+Enter 换行'"
+          :disabled="sse.isStreaming.value || !agentId || quotaExhausted"
           @keydown.enter.exact.prevent="send"
         />
         <div class="input-actions">
@@ -136,7 +147,7 @@
           </span>
           <div class="toolbar">
             <el-button v-if="sse.isStreaming.value" type="danger" plain :icon="VideoPause" @click="stop">停止</el-button>
-            <el-button type="primary" :icon="Promotion" :loading="sse.isStreaming.value" :disabled="!input.trim()" @click="send">
+            <el-button type="primary" :icon="Promotion" :loading="sse.isStreaming.value" :disabled="!input.trim() || quotaExhausted" @click="send">
               发送
             </el-button>
           </div>
@@ -155,14 +166,16 @@ import {
   Promotion,
   Tools,
   VideoPause,
+  Wallet,
   WarningFilled,
 } from '@element-plus/icons-vue'
 import { useSse, type CitationItem, type InterruptedInfo, type StreamStatus, type ToolCallItem } from '@/composables/useSse'
 import { agentsApi } from '@/api/agents'
-import type { AgentInfo, UsageInfo } from '@/types'
-import { formatCost, formatDuration, formatNumber } from '@/utils/format'
+import { quotaApi } from '@/api/quota'
+import type { AgentInfo, QuotaStatus, UsageInfo } from '@/types'
+import { formatCost, formatDateTime, formatDuration, formatNumber } from '@/utils/format'
 import { isFallbackError } from '@/utils/request'
-import { mockAgents, withMock } from '@/utils/mock'
+import { mockAgents, mockQuotaStatus, withMock } from '@/utils/mock'
 import { renderMarkdown } from '@/utils/markdown'
 
 interface Turn {
@@ -176,6 +189,7 @@ interface Turn {
   mock: boolean
   status: StreamStatus
   error: string
+  errorCode?: number
   interrupted: InterruptedInfo | null
 }
 
@@ -186,6 +200,34 @@ const turns = ref<Turn[]>([])
 const input = ref('')
 const scrollRef = ref<HTMLElement | null>(null)
 const approving = ref(false)
+const quota = ref<QuotaStatus | null>(null)
+const quotaExhausted = ref(false)
+
+const quotaText = computed(() => {
+  const current = quota.value
+  if (!current) return '额度加载中'
+  const daily = current.dailyLimit
+    ? `${formatNumber(current.dailyUsed)} / ${formatNumber(current.dailyLimit)}`
+    : `${formatNumber(current.dailyUsed)}（不限）`
+  const total = current.totalLimit
+    ? `${Math.min(100, Math.round((current.totalUsed / current.totalLimit) * 100))}%`
+    : '不限'
+  return `今日 ${daily} · 总额度 ${total}`
+})
+
+async function loadQuota(): Promise<void> {
+  try {
+    const result = await withMock('我的额度', () => quotaApi.me(), () => mockQuotaStatus())
+    quota.value = result.data
+    const current = result.data
+    quotaExhausted.value =
+      !current.unlimited &&
+      ((current.dailyLimit > 0 && current.dailyRemaining <= 0) ||
+        (current.totalLimit > 0 && current.totalRemaining <= 0))
+  } catch (error) {
+    if (!isFallbackError(error)) ElMessage.error('额度信息加载失败')
+  }
+}
 
 const quickPrompts = [
   '产品支持哪些知识库能力？',
@@ -238,12 +280,21 @@ function applySse(target: Turn): void {
   target.mock = sse.isMockStream.value
   target.status = sse.status.value
   target.error = sse.errorMessage.value
+  target.errorCode = sse.errorCode.value
+  if (target.errorCode === 42901) {
+    target.error = '额度已用尽，已停止后续模型调用。请联系管理员分配 Token 或等待每日额度重置。'
+    quotaExhausted.value = true
+  }
   target.interrupted = sse.interrupted.value
 }
 
 async function send(): Promise<void> {
   const question = input.value.trim()
   if (!question || sse.isStreaming.value || !agentId.value) return
+  if (quotaExhausted.value) {
+    ElMessage.warning('额度已用尽，暂时无法继续对话')
+    return
+  }
 
   // 上一次已完成/中断的对话快照入列
   const previous = turns.value[turns.value.length - 1]
@@ -280,6 +331,7 @@ async function send(): Promise<void> {
     applySse(current)
     if (['completed', 'cancelled', 'error'].includes(sse.status.value)) {
       window.clearInterval(syncTimer)
+      void loadQuota()
     }
     void scrollToBottom()
   }, 60)
@@ -324,7 +376,10 @@ async function scrollToBottom(): Promise<void> {
   if (element) element.scrollTop = element.scrollHeight
 }
 
-onMounted(loadAgents)
+onMounted(() => {
+  void loadAgents()
+  void loadQuota()
+})
 
 onBeforeUnmount(() => {
   window.clearInterval(syncTimer)
@@ -525,6 +580,26 @@ onBeforeUnmount(() => {
   border-top: 1px solid var(--af-border);
   padding: 12px 16px 10px;
   background: #fff;
+}
+
+.quota-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 320px;
+}
+
+.quota-exhausted {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding: 8px 12px;
+  border: 1px solid #fecaca;
+  border-radius: var(--af-radius);
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 13px;
 }
 
 .input-actions {
