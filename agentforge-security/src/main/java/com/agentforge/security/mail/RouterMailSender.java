@@ -9,11 +9,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Component;
 
 /**
- * 邮件发送策略：
- * <ol>
- *   <li>{@code agentforge.auth.mail-enabled=true} 且容器中存在 JavaMailSender（spring.mail.* 已配置）→ 真实 SMTP 发送；</li>
- *   <li>否则打印到服务端日志（仅开发环境；生产必须开启 SMTP，见 docs/03-本地开发环境.md §2.4）。</li>
- * </ol>
+ * 邮件发送策略：mail-enabled 为 true 且存在 JavaMailSender 时走真实 SMTP，否则回退到日志输出。
  */
 @Slf4j
 @Component

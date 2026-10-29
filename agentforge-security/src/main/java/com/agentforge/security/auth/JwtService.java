@@ -21,12 +21,9 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * JWT 与 token 工具：
- * <ul>
- *   <li>access token：HS256 JWT，携带 userId/username/tenantId/roles/perms/jti，默认 2h；</li>
- *   <li>refresh token：SecureRandom 生成的不可预测随机串，DB 只保存 SHA-256 哈希（7d，可轮换/吊销）。</li>
- * </ul>
- * 契约：docs/04-API契约.md §1 认证。
+ * JWT 工具：签发与解析 access token（HS256，携带 userId/username/tenantId/roles/perms/jti，默认 2h），
+ * 生成 refresh token 明文并计算入库哈希（随机串，服务端 pepper 加 SHA-256，默认 7d，可轮换吊销）。
+ * 密钥 UTF-8 字节数不足 32 时启动失败。
  */
 @Component
 public class JwtService {
@@ -75,12 +72,7 @@ public class JwtService {
                 .compact();
     }
 
-    /**
-     * 解析 access token。
-     *
-     * @throws io.jsonwebtoken.ExpiredJwtException token 过期（错误码 40101）
-     * @throws io.jsonwebtoken.JwtException        token 非法或已被登出吊销
-     */
+    /** 解析 access token；过期抛 ExpiredJwtException（40101），非法或已吊销抛 JwtException。 */
     public AccessClaims parseAccessToken(String token) {
         Claims claims = Jwts.parser()
                 .verifyWith(secretKey)

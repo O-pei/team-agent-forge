@@ -6,8 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import java.time.Duration;
 
 /**
- * 认证与账号相关配置，全部落在 {@code agentforge.auth.*} 键块下。
- * <p>生产环境必须通过环境变量覆盖 {@code AGENTFORGE_JWT_SECRET} 与管理员种子密码。</p>
+ * 认证与账号配置，前缀 agentforge.auth；生产必须用环境变量覆盖 JWT 密钥与管理员种子密码。
  */
 @Data
 @ConfigurationProperties(prefix = "agentforge.auth")
@@ -52,10 +51,7 @@ public class AuthProperties {
     /** 短信通道是否启用（v0.1.0 预留，默认 false）。 */
     private boolean smsEnabled = false;
 
-    /**
-     * dev/演示用开关：为 true 时在发送验证码的响应 data.devCode 中回显验证码。
-     * 默认关闭，生产必须保持 false。
-     */
+    /** 演示开关：为 true 时在发送验证码响应的 data.devCode 中回显验证码；生产必须保持 false。 */
     private boolean exposeCodeInResponse = false;
 
     /** 是否在 dev 下自动创建默认管理员（仅当用户不存在时）。 */

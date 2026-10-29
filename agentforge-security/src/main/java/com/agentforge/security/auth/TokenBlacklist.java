@@ -7,9 +7,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * access token jti 黑名单（登出即时失效）。
- * <p>v0.1.0 无 Redis，用进程内存 + 过期清理兜底；多实例部署时需替换为 Redis 实现
- * （TODO: 接入 Redis 后改为 {@code auth:jti:blacklist:{jti}} 并设置与 token 等长的 TTL）。</p>
+ * access token jti 黑名单，登出后立即失效；进程内实现并做过期清理，多实例需改为 Redis。
  */
 @Component
 public class TokenBlacklist {

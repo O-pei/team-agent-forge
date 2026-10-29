@@ -5,10 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 
 /**
- * 发送邮箱验证码请求（契约 §2.1 POST /api/v1/auth/email-code）。
- *
- * @param email 目标邮箱
- * @param scene 场景：REGISTER / LOGIN / RESET_PASSWORD
+ * 发送邮箱验证码请求：邮箱与场景（REGISTER、LOGIN、RESET_PASSWORD）。
  */
 public record SendEmailCodeRequest(
         @NotBlank(message = "邮箱不能为空")

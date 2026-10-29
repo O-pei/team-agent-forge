@@ -22,15 +22,9 @@ import java.time.LocalDateTime;
 import java.util.HexFormat;
 
 /**
- * 邮箱验证码：生成 / 限流 / 发送 / 校验。
- *
- * <p>安全约束（契约 §2.1 + 技术方案 §4.2）：</p>
- * <ul>
- *   <li>5 分钟有效；</li>
- *   <li>同邮箱 + 场景 60s 冷却、1 小时最多 10 次；同 IP 1 小时最多 20 次；</li>
- *   <li>单个验证码最多 5 次错误尝试，超出即失效；</li>
- *   <li>数据库只存验证码哈希（pepper 来自 jwt-secret），不存明文。</li>
- * </ul>
+ * 邮箱验证码服务：生成、限流、发送与校验验证码。
+ * 5 分钟有效，同邮箱同场景 60 秒冷却、每小时最多 10 次，同 IP 每小时最多 20 次；
+ * 单个验证码最多 5 次错误尝试，数据库只存哈希不存明文。
  */
 @Slf4j
 @Service
@@ -86,9 +80,7 @@ public class EmailCodeService {
                 properties.getEmailCodeTtl().toSeconds(), properties.getEmailCodeCooldown().toSeconds(), devCode);
     }
 
-    /**
-     * 校验验证码：成功后立即标记 consumed；失败累计 attempts，达到上限后作废。
-     */
+    /** 校验验证码；成功后标记已消费，失败累计尝试次数，达到上限即作废。 */
     @Transactional
     public void verify(String email, String sceneValue, String code) {
         String normalizedEmail = normalize(email);

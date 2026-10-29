@@ -10,18 +10,10 @@ import java.security.SecureRandom;
 import java.util.Base64;
 
 /**
- * AES-256-GCM 加解密工具（模型密钥、数据源密码等敏感字段入库前必须使用）。
- *
- * <p>主密钥来源（按优先级）：</p>
- * <ol>
- *   <li>系统属性 {@code agentforge.crypto.key}（由 Spring 配置 {@code agentforge.crypto.key} 注入，见
- *       agentforge-audit 的配置类）；</li>
- *   <li>环境变量 {@code AGENTFORGE_CRYPTO_KEY}；</li>
- *   <li>开发期内置默认值（<b>仅开发/测试可用，生产必须通过环境变量覆盖</b>）。</li>
- * </ol>
- *
- * <p>密文格式：{@code v1:} + Base64(12 字节随机 IV + GCM 密文/认证标签)。密钥由口令经 SHA-256 派生，
- * 因此口令可以是任意长度字符串；更换密钥后旧密文不可解密。</p>
+ * AES-256-GCM 加解密工具，用于模型密钥、数据源密码等敏感字段。
+ * 主密钥优先取系统属性 agentforge.crypto.key，其次环境变量 AGENTFORGE_CRYPTO_KEY，
+ * 最后回退开发默认值（仅开发/测试可用，生产必须覆盖）。
+ * 密文格式为 v1: 前缀加 Base64(12 字节随机 IV + GCM 密文/认证标签)，密钥由口令经 SHA-256 派生。
  */
 public final class CryptoUtils {
 
@@ -43,21 +35,14 @@ public final class CryptoUtils {
     private CryptoUtils() {
     }
 
-    /**
-     * 显式配置主口令（Spring 启动时注入 {@code agentforge.crypto.key}）。
-     * 传入空值时忽略，继续按系统属性 / 环境变量 / 开发默认值解析。
-     */
+    /** 显式配置主口令；传入空值时忽略。 */
     public static void configure(String secret) {
         if (secret != null && !secret.isBlank()) {
             secretKey = deriveKey(secret);
         }
     }
 
-    /**
-     * 加密。
-     *
-     * @return {@code null}/{@code ""} 原样返回（表示未配置），否则返回 {@code v1:...} 密文
-     */
+    /** 加密敏感字段；null 或空串原样返回，否则返回 v1: 前缀密文。 */
     public static String encrypt(String plaintext) {
         if (plaintext == null || plaintext.isEmpty()) {
             return plaintext;
@@ -77,11 +62,7 @@ public final class CryptoUtils {
         }
     }
 
-    /**
-     * 解密。
-     *
-     * @return {@code null}/{@code ""} 原样返回；兼容历史明文（非 {@code v1:} 前缀）直接返回原值
-     */
+    /** 解密敏感字段；null 或空串原样返回，非 v1: 前缀的历史明文直接返回。 */
     public static String decrypt(String ciphertext) {
         if (ciphertext == null || ciphertext.isEmpty()) {
             return ciphertext;

@@ -7,14 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 /**
- * 手机号登录骨架（v0.1.0 预留，不破坏契约）。
- *
- * <p>后续接入方式：</p>
- * <ol>
- *   <li>实现 {@link SmsSender}（如阿里云短信），按 {@code agentforge.auth.sms-enabled} 条件装配；</li>
- *   <li>在 V1 {@code af_user.phone} 基础上补 {@code phone_verified} 与 {@code af_sms_verification} 表（新迁移）；</li>
- *   <li>在此实现 {@code loginByPhone(phone, code)}，复用 AuthService 的 token 签发逻辑，渠道标记 {@link LoginChannel#PHONE}。</li>
- * </ol>
+ * 手机号登录预留实现：短信通道未接入，发送验证码与手机号登录均返回 50300。
  */
 @Service
 @RequiredArgsConstructor

@@ -9,15 +9,9 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.scheduling.annotation.EnableAsync;
 
 /**
- * AgentForge 应用入口。
- *
- * <p>模块划分：common / security / audit / memory / rag / datasource / agent / app。</p>
- *
- * <p>各业务模块的 Entity 与 Repository 分布在 {@code com.agentforge.<module>.entity|repository}，
- * 不在本启动类所在包下，因此必须显式声明扫描路径；模块内不要重复添加
- * <p>排除 {@link UserDetailsServiceAutoConfiguration}：本项目的认证完全基于自研 JWT 过滤器，
- * 不使用 Spring Security 的默认内存用户；保留自动配置会在启动日志里打印随机密码并注册
- * {@code inMemoryUserDetailsManager}，既无用又容易让人误判生产环境还存在默认凭据。</p>
+ * AgentForge 应用入口，统一扫描各模块的组件、配置属性、Entity 与 Repository。
+ * 认证完全基于自研 JWT 过滤器，故排除 Spring Security 默认内存用户自动配置，
+ * 避免启动日志打印随机密码并注册无用的 inMemoryUserDetailsManager。
  */
 @SpringBootApplication(
         scanBasePackages = "com.agentforge",

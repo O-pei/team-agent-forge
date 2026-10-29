@@ -41,11 +41,7 @@ public class RefreshTokenService {
         return rawToken;
     }
 
-    /**
-     * 消费（轮换）refresh token：校验存在、未吊销、未过期，然后立即吊销。
-     *
-     * @return 对应的用户 ID
-     */
+    /** 消费（轮换）refresh token：校验存在、未吊销、未过期后立即吊销，返回对应用户 ID。 */
     @Transactional
     public Long consume(String rawToken) {
         if (rawToken == null || rawToken.isBlank()) {

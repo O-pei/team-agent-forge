@@ -8,14 +8,8 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
 
 /**
- * 默认异步执行器。
- *
- * <p>各模块自带专用线程池（{@code tokenUsageExecutor}、{@code agentRunExecutor}），
- * 若容器里存在多个 {@code TaskExecutor} 而没有名为 {@code taskExecutor} 的 bean，
- * Spring 的 {@code @Async} 默认解析会打印
- * “More than one TaskExecutor bean found ... none is named 'taskExecutor'” 并退化为
- * 每次新建线程的 SimpleAsyncTaskExecutor。这里显式提供 {@code taskExecutor} 作为
- * 通用异步入口（文档解析、邮件发送等），避免隐式退化。</p>
+ * 默认异步执行器：提供名为 taskExecutor 的通用线程池，供文档解析、邮件发送等任务复用。
+ * 避免容器存在多个 TaskExecutor 时 @Async 退化为每次新建线程。
  */
 @Configuration
 public class AsyncConfig {

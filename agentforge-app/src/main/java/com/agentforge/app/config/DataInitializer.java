@@ -19,9 +19,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * dev 环境默认管理员种子（契约附录 A：admin@agentforge.dev / Admin@123456）。
- * <p>仅 dev profile 生效；用户已存在则跳过；密码可由 {@code AGENTFORGE_ADMIN_PASSWORD} 覆盖。
- * 生产环境不通过代码/Flyway 写入任何默认账号。</p>
+ * dev 环境默认管理员种子：仅 dev profile 生效，用户已存在则跳过，
+ * 密码可由 AGENTFORGE_ADMIN_PASSWORD 覆盖；生产不写入任何默认账号。
  */
 @Slf4j
 @Component

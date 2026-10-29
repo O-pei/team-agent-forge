@@ -7,8 +7,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 
 /**
- * 注册 common 模块的 {@link TraceIdFilter}（common 中未加 @Component）。
- * <p>顺序必须早于 Spring Security 过滤器链（-100），否则未认证 401 响应拿不到 traceId。</p>
+ * 注册 common 模块的 TraceIdFilter；顺序必须早于 Spring Security 过滤器链，否则 401 响应没有 traceId。
  */
 @Configuration
 public class FilterConfig {

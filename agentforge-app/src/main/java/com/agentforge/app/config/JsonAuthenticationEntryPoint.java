@@ -15,8 +15,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 /**
- * 未认证统一返回 {@link ApiResponse} JSON（401），而不是 Spring Security 默认的 HTML / 空 body。
- * <p>access token 过期时按契约附录 B 返回 40101，其余未认证场景返回 40100。</p>
+ * 未认证统一返回 401 JSON：access token 过期返回 40101，其余未认证场景返回 40100。
  */
 @Component
 @RequiredArgsConstructor

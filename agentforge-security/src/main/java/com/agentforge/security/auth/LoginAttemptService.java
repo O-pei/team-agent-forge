@@ -9,8 +9,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 登录失败锁定：同账号 15 分钟内失败 5 次即锁定（契约 §2.1）。
- * <p>无 Redis 的进程内实现；多实例部署时需改为 Redis 计数器。</p>
+ * 登录失败锁定：同账号连续失败达到阈值后锁定 15 分钟（进程内实现，多实例需改 Redis）。
  */
 @Component
 public class LoginAttemptService {

@@ -6,13 +6,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import java.time.Instant;
 
 /**
- * 统一 API 响应包装。
- *
- * @param code      业务码，0 表示成功
- * @param message   面向用户的提示信息
- * @param data      业务数据
- * @param traceId   链路追踪 ID，便于日志定位
- * @param timestamp 服务端时间戳（UTC）
+ * 统一 API 响应包装：业务码、提示信息、业务数据、traceId 与服务端时间戳。
  */
 @JsonInclude(JsonInclude.Include.ALWAYS)
 public record ApiResponse<T>(int code, String message, T data, String traceId, Instant timestamp) {

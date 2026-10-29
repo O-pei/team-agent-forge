@@ -21,8 +21,8 @@ import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 /**
- * 安全装配：无状态 JWT + RBAC 方法级鉴权。
- * <p>白名单：认证匿名端点、健康检查、OpenAPI/Swagger、dev 环境 H2 Console；其余一律需登录。</p>
+ * 安全装配：无状态 JWT 认证加 RBAC 方法级鉴权。
+ * 白名单为认证匿名端点、健康检查、OpenAPI/Swagger 与 dev 环境 H2 Console，其余请求必须登录。
  */
 @Configuration
 @EnableWebSecurity
