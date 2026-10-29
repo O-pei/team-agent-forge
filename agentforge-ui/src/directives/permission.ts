@@ -1,7 +1,6 @@
 /**
- * v-perm 按钮级权限指令
- * 用法：<el-button v-perm="'user:write'">新增</el-button> / v-perm="['rag:write','rag:read']"
- * 无权限时隐藏（保留 DOM 占位，权限异步到达后可恢复）
+ * v-perm 按钮级权限指令：无权限时隐藏元素，权限异步到达后可恢复显示。
+ * 用法：v-perm="'user:write'" 或 v-perm="['rag:write','rag:read']"。
  */
 import type { Directive, DirectiveBinding } from 'vue'
 import { useAuthStore } from '@/stores/auth'

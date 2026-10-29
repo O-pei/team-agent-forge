@@ -1,7 +1,4 @@
-/**
- * 前端类型定义（v0.1 手写，与 docs/04-API契约.md 字段一一对应）
- * 后续可由 /v3/api-docs 用 openapi-typescript 生成，替换本文件。
- */
+/** 前端类型定义，与 docs/04-API契约.md 字段对应。 */
 
 /** 通用响应包装，见契约第 1 节 */
 export interface ApiResponse<T = unknown> {
@@ -25,7 +22,7 @@ export interface PageQuery {
   size?: number
 }
 
-/* ============================ 2.1 认证与用户 ============================ */
+/* 认证与用户 */
 
 export type EmailScene = 'REGISTER' | 'LOGIN' | 'RESET_PASSWORD'
 
@@ -135,7 +132,7 @@ export interface ResetUserPasswordRequest {
   newPassword: string
 }
 
-/* ============================ 角色 / 权限 ============================ */
+/* 角色与权限 */
 
 export interface RoleInfo {
   id: number | string
@@ -163,7 +160,7 @@ export interface PermissionNode {
   children?: PermissionNode[]
 }
 
-/* ============================ 2.2 模型 / Token 审计 ============================ */
+/* 模型与 Token 审计 */
 
 export type ModelProvider = 'DASHSCOPE' | 'OPENAI_COMPATIBLE' | 'MOCK'
 
@@ -274,7 +271,7 @@ export interface AuditOverview {
   todayCost?: number
 }
 
-/* ============================ 2.6 Agent Harness ============================ */
+/* Agent Harness */
 
 export type AgentStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'
 
@@ -368,7 +365,7 @@ export interface ApproveRequest {
   comment?: string
 }
 
-/* ============================ 2.4 RAG ============================ */
+/* RAG */
 
 export interface KnowledgeBase {
   id: number | string
@@ -426,7 +423,7 @@ export interface SearchHit {
   filename?: string
 }
 
-/* ============================ 2.5 数据源 ============================ */
+/* 数据源 */
 
 export type DatasourceType = 'MYSQL' | 'POSTGRESQL' | 'H2'
 
@@ -495,7 +492,7 @@ export interface SqlQueryLog {
   createdAt: string
 }
 
-/* ============================ 沙箱（契约 §2.5：POST /sandbox/execute、GET /sandbox/providers） ============================ */
+/* 沙箱 */
 
 export interface SandboxExecuteRequest {
   /** java | python | node | shell */
@@ -523,7 +520,7 @@ export interface SandboxExecuteResult {
   truncated?: boolean
 }
 
-/* ============================ SSE 事件（契约第 3 节） ============================ */
+/* SSE 事件 */
 
 export type SseEventName =
   | 'run.started'

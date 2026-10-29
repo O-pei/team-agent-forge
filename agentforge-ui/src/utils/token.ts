@@ -1,6 +1,5 @@
 /**
- * Token / 用户本地持久化。
- * 独立成模块，避免 axios 封装与 Pinia store 循环依赖。
+ * Token 与用户信息本地持久化，独立成模块避免循环依赖。
  */
 
 const ACCESS_TOKEN_KEY = 'agentforge.accessToken'

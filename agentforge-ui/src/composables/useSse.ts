@@ -1,7 +1,5 @@
 /**
- * SSE 流式对话 composable（契约第 3 节）
- * 用 fetch + ReadableStream 解析，支持：增量文本、工具调用、引用、usage、
- * HITL 中断、取消；后端未就绪时用演示流模拟同样事件序列。
+ * 流式对话 composable：解析 SSE 事件、维护消息与工具调用状态、支持取消与演示流。
  */
 import { computed, ref } from 'vue'
 import type { ChatRequest, UsageInfo } from '@/types'

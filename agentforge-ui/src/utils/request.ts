@@ -1,10 +1,5 @@
 /**
- * Axios 统一封装（契约第 1、6 节）
- * - baseURL 默认 /api/v1，可用 VITE_API_BASE 覆盖
- * - 自动附带 Authorization: Bearer <accessToken>
- * - 解析 ApiResponse：code===0 返回 data，其余转为 ApiError 并全局提示
- * - 401 自动用 refreshToken 刷新一次后重试原请求，失败跳登录
- * - responseType=blob 直接返回二进制（CSV 导出）
+ * Axios 统一封装：ApiResponse 解包、Bearer 注入、401 刷新重试与全局错误提示。
  */
 import axios, {
   type AxiosError,
@@ -70,7 +65,7 @@ function notify(err: ApiError, config?: RetriableConfig): void {
   ElMessage.error({ message: err.message || '请求失败', grouping: true, duration: 3500 })
 }
 
-/* ------------------------------ 401 刷新 ------------------------------ */
+/* 401 刷新 */
 
 let refreshPromise: Promise<string | null> | null = null
 let redirecting = false
@@ -130,7 +125,7 @@ async function handleUnauthorized(config: RetriableConfig | undefined): Promise<
   throw new ApiError(40100, '登录状态已失效，请重新登录')
 }
 
-/* ------------------------------ 拦截器 ------------------------------ */
+/* 拦截器 */
 
 service.interceptors.request.use((config) => {
   const token = getAccessToken()
@@ -181,7 +176,7 @@ service.interceptors.response.use(
   },
 )
 
-/* ------------------------------ 对外客户端 ------------------------------ */
+/* 对外客户端 */
 
 export interface HttpClient {
   request<T = unknown>(config: AxiosRequestConfig): Promise<T>

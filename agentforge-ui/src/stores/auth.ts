@@ -1,6 +1,5 @@
 /**
- * 认证状态：token 持久化 localStorage、user/roles/permissions、权限判断。
- * 后端未就绪（DEV + VITE_ENABLE_MOCK）时允许「演示身份」登录，便于 UI 走查。
+ * 认证状态：token、用户与权限的持久化和权限判断，后端未就绪时可降级为演示身份。
  */
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'

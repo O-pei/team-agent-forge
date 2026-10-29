@@ -1,6 +1,5 @@
 /**
- * SSE 解析（fetch + ReadableStream，EventSource 无法带 Authorization 头）
- * 契约第 3 节：event 为事件名，data 为单行 JSON；心跳 event: ping 每 15s。
+ * SSE 解析：基于 fetch 与 ReadableStream，支持 Authorization 头和单行 JSON 事件。
  */
 import { API_BASE, ApiError } from './request'
 import { getAccessToken } from './token'

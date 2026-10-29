@@ -216,7 +216,7 @@ async function onUserCommand(command: string): Promise<void> {
   overflow: hidden;
 }
 
-/* ---------- 侧边栏 ---------- */
+/* 侧边栏 */
 .app-sidebar {
   display: flex;
   flex-direction: column;
@@ -326,7 +326,7 @@ async function onUserCommand(command: string): Promise<void> {
   box-shadow: 0 0 6px #22c55e;
 }
 
-/* ---------- 主区域 ---------- */
+/* 主区域 */
 .app-main {
   display: flex;
   flex-direction: column;

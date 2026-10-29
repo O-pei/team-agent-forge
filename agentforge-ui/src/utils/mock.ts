@@ -1,9 +1,5 @@
 /**
- * 演示数据兜底（后端未就绪时保证 UI 可完整走查）
- *
- * 设计：页面用 withMock(source, () => api.xxx(), () => mockXxx()) 包裹真实请求；
- * 仅当「网络不可达 / 404 / 5xx / 50300」且 VITE_ENABLE_MOCK !== 'false' 时切换演示数据，
- * 并在顶栏显示「演示数据」标记，避免把业务错误误当后端未就绪。
+ * 后端未就绪时的演示数据兜底，仅在 DEV 且 VITE_ENABLE_MOCK 未关闭时生效。
  */
 import { reactive } from 'vue'
 import { isFallbackError } from '@/utils/request'
@@ -66,7 +62,7 @@ export async function withMock<T>(
   }
 }
 
-/* ------------------------------ 基础造数 ------------------------------ */
+/* 基础造数 */
 
 const NOW = Date.now()
 
@@ -87,7 +83,7 @@ function pick<T>(list: T[], seed: number): T {
   return list[Math.floor(pseudo(seed) * list.length) % list.length]
 }
 
-/* ------------------------------ 权限 ------------------------------ */
+/* 权限 */
 
 /** 契约附录 A 全量权限码 */
 export const ALL_PERMISSIONS = [
@@ -141,7 +137,7 @@ export function mockMe(): MeResult {
   }
 }
 
-/* ------------------------------ Agent / 工具 ------------------------------ */
+/* Agent 与工具 */
 
 const AGENTS: AgentInfo[] = [
   {
@@ -232,7 +228,7 @@ export function mockTools(): AgentTool[] {
   return TOOLS.map((item) => ({ ...item }))
 }
 
-/* ------------------------------ 知识库 ------------------------------ */
+/* 知识库 */
 
 const KBS: KnowledgeBase[] = [
   {
@@ -332,7 +328,7 @@ export function mockSearchHits(query: string): SearchHit[] {
   ]
 }
 
-/* ------------------------------ 数据源 / SQL ------------------------------ */
+/* 数据源与 SQL */
 
 const DATASOURCES: Datasource[] = [
   {
@@ -452,7 +448,7 @@ export function mockQueryLogs(): SqlQueryLog[] {
   }))
 }
 
-/* ------------------------------ 模型 ------------------------------ */
+/* 模型 */
 
 const MODELS: ModelConfig[] = [
   {
@@ -494,7 +490,7 @@ export function mockModels(): ModelConfig[] {
   return MODELS.map((item) => ({ ...item }))
 }
 
-/* ------------------------------ 审计 ------------------------------ */
+/* 审计 */
 
 export function mockAuditOverview(): AuditOverview {
   return {
@@ -599,7 +595,7 @@ export function mockUsageRecords(page = 1, size = 20): { records: UsageRecord[];
   return { records, total }
 }
 
-/* ------------------------------ RBAC ------------------------------ */
+/* RBAC */
 
 const USERS: UserInfo[] = [
   { id: 1, email: 'admin@agentforge.dev', username: 'admin', nickname: '超级管理员', status: 'ACTIVE', roles: ['SUPER_ADMIN'], createdAt: iso(60 * 24 * 30) },
@@ -706,7 +702,7 @@ function permissionLabel(code: string): string {
   return labels[code] || code
 }
 
-/* ------------------------------ 沙箱 ------------------------------ */
+/* 沙箱 */
 
 export function mockSandboxProviders(): SandboxProviderInfo[] {
   return [

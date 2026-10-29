@@ -1,8 +1,5 @@
 /**
- * 路由 + 守卫
- * - 未登录 → /login?redirect=...
- * - 已登录但未拉取权限 → 先 /auth/me
- * - meta.permission 不满足 → /403
+ * 路由与守卫：权限校验、首屏拉取当前用户、按权限选择落地页。
  */
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'

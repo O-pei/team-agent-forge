@@ -1,7 +1,5 @@
 /**
- * 代码沙箱（契约 2.5 增补）
- * POST /sandbox/execute 权限 datasource:query
- * GET  /sandbox/providers 权限 datasource:read
+ * 代码沙箱：执行代码与查询可用运行时。
  */
 import { http } from '@/utils/request'
 import type { SandboxExecuteRequest, SandboxExecuteResult, SandboxProviderInfo } from '@/types'
