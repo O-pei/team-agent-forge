@@ -197,12 +197,13 @@ public final class SecurityUtils {           // com.agentforge.security.util.Sec
 package com.agentforge.security.spi;
 
 public interface UserDirectory {
-    PageResult<UserBrief> pageUsers(String keyword, int page, int size);
-    UserBrief findUser(Long userId);
-    boolean hasRole(Long userId, String roleCode);
-}
+    Page pageUsers(String keyword, int page, int size);
+    UserBrief findUser(long userId);
+    boolean hasRole(long userId, String roleCode);
 
-public record UserBrief(Long id, String username, String email, String nickname, String status) {}
+    record UserBrief(Long id, String username, String email, String nickname, String status) {}
+    record Page(List<UserBrief> records, long total, int page, int size) {}
+}
 ```
 
 - 实现在 security 模块，使用现有用户仓储只读查询，不暴露 Entity。
