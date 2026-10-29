@@ -63,4 +63,17 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <!-- JDK21 默认禁止动态 attach，Mockito inline mock maker 需要显式允许 -->
+                    <argLine>-Dfile.encoding=UTF-8 -Djdk.attach.allowAttachSelf=true -XX:+EnableDynamicAgentLoading</argLine>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>
