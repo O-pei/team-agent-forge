@@ -82,7 +82,7 @@
 | DELETE | `/api/v1/memory/sessions/{sessionId}` | `memory:write` | 清空会话记忆（Redis + checkpointer） |
 | GET | `/api/v1/memory/facts?page&size&keyword` | `memory:read` | 长期记忆列表 |
 | DELETE | `/api/v1/memory/facts/{id}` | `memory:write` | 删除一条长期记忆 |
-| GET | `/api/v1/memory/summary/{sessionId}` | `memory:read` | 会话摘要 |
+| GET | `/api/v1/memory/sessions/{sessionId}/summary` | `memory:read` | 会话摘要（v0.1.0 实现路径；原草案 `/memory/summary/{sessionId}` 未采用，前端按实际路径对接） |
 
 ### 2.4 RAG（agentforge-rag，写者 backend-knowledge）
 

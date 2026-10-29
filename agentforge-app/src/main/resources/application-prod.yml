@@ -16,15 +16,16 @@ spring:
     locations: classpath:db/migration
 
 agentforge:
-  security:
-    # 生产必须显式提供：JWT 签名密钥（>=32 字节）与 AES-GCM 主密钥；缺失即启动失败。
-    jwt-secret: ${AGENTFORGE_JWT_SECRET}
-  crypto:
-    key: ${AGENTFORGE_CRYPTO_KEY}
   auth:
+    # 生产必须显式提供 JWT 签名密钥（>=32 字节）；缺失即启动失败（故障关闭）。
+    # 注意：绑定前缀是 agentforge.auth（AuthProperties），不是 agentforge.security。
+    jwt-secret: ${AGENTFORGE_JWT_SECRET}
     # 生产禁用 dev 默认管理员种子
     seed-admin-enabled: false
     expose-code-in-response: false
     mail-enabled: ${AGENTFORGE_MAIL_ENABLED:true}
+  crypto:
+    # AES-GCM 主密钥（加密模型 Key 与数据源密码）；缺失即启动失败。
+    key: ${AGENTFORGE_CRYPTO_KEY}
   memory:
     redis-enabled: ${AGENTFORGE_REDIS_ENABLED:true}

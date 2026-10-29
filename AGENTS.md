@@ -60,4 +60,8 @@ app --> agent --> {memory, rag, datasource} --> audit --> security --> common
 
 ## 7. 当前阶段
 
-P0 完成中：工程骨架、Flyway V1、契约冻结。接下来 P1~P7 并行，任务见团队任务板与 `docs/02-开发路线图.md`。
+**v0.1.0 已交付**（2026-10-29）：多模块骨架、邮箱注册验证 + JWT + RBAC、模型网关 + Token 审计、Redis/InMemory 记忆、RAG 知识库、数据源只读直连、ProcessSandbox、多智能体 Harness + SSE、Vue3 前端、e2e 冒烟脚本（`node scripts/smoke-test.mjs`）与 CI。
+
+- 模块设计文档：`docs/05` 认证与权限、`docs/06` 模型网关/审计/记忆、`docs/07` RAG/数据源/沙箱、`docs/08` 前端、`docs/09` 多智能体 Harness。
+- 已知边界与 v0.2 计划：见各文档「已知限制」章节与 `README.md` 能力矩阵（SUPERVISOR 为 LlmRoutingAgent 近似、沙箱无强隔离、`OPENAI_COMPATIBLE` 未接入、多轮上下文装配等）。
+- 下一步（v0.2）：Graph 循环编排、Docker/gVisor 沙箱、pgvector、真实 DashScope 回归、计费与预算告警完善。
