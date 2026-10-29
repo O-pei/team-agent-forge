@@ -24,6 +24,17 @@ spring:
         format_sql: false
         jdbc:
           time_zone: Asia/Shanghai
+  # SMTP 配置：填写后把 agentforge.auth.mail-enabled 置为 true 即启用真实邮件发送；
+  # 不配置时由 RouterMailSender 走日志兜底（仅开发环境打印验证码）。
+  # mail:
+  #   host: ${MAIL_HOST:}
+  #   port: ${MAIL_PORT:465}
+  #   username: ${MAIL_USERNAME:}
+  #   password: ${MAIL_PASSWORD:}
+  #   default-encoding: UTF-8
+  #   properties:
+  #     mail.smtp.auth: true
+  #     mail.smtp.ssl.enable: true
 
 server:
   port: 8080
@@ -50,15 +61,34 @@ agentforge:
     jwt-secret: ${AGENTFORGE_JWT_SECRET:agentforge-dev-only-secret-change-me-0123456789}
     access-token-ttl: 2h
     refresh-token-ttl: 7d
-    email-code-ttl: 10m
+    # 邮箱验证码 5 分钟有效（契约 §2.1）
+    email-code-ttl: 5m
     email-code-length: 6
+    email-code-max-attempts: 5
+    email-code-cooldown: 60s
+    email-code-hourly-limit: 10
+    email-code-ip-hourly-limit: 20
+    login-max-failures: 5
+    login-lock-duration: 15m
     # 未配置 SMTP 时开发环境使用日志输出验证码
     mail-enabled: ${AGENTFORGE_MAIL_ENABLED:false}
     sms-enabled: false
+    # dev 联调/演示用：为 true 时发码响应体返回 devCode；生产环境必须保持 false
+    expose-code-in-response: ${AGENTFORGE_EXPOSE_CODE:false}
+    # 仅 dev 生效的默认管理员种子（契约附录 A），用户已存在时跳过
+    seed-admin-enabled: ${AGENTFORGE_SEED_ADMIN:true}
+    seed-admin-email: admin@agentforge.dev
+    seed-admin-username: admin
+    seed-admin-nickname: 系统管理员
+    seed-admin-password: ${AGENTFORGE_ADMIN_PASSWORD:Admin@123456}
   audit:
     # 预算告警阈值（占总配额百分比）
     alert-threshold: 0.8
     flush-interval-ms: 2000
+  crypto:
+    # AES-GCM 主密钥：模型 API Key / 数据源密码等敏感字段入库前用它加密。
+    # 生产环境务必通过环境变量 AGENTFORGE_CRYPTO_KEY 覆盖；下面默认值仅供本地开发与单测使用。
+    key: ${AGENTFORGE_CRYPTO_KEY:agentforge-dev-only-crypto-key-change-me}
   memory:
     redis-enabled: ${AGENTFORGE_REDIS_ENABLED:false}
     short-term-max-messages: 20
