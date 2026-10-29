@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 安全问题
+    url: https://github.com/O-pei/team-agent-forge/blob/main/SECURITY.md
+    about: 请勿用公开 Issue 报告安全漏洞，按 SECURITY.md 私下上报。
+  - name: 使用问题 / 讨论
+    url: https://github.com/O-pei/team-agent-forge/discussions
+    about: 架构、部署、二次开发问题请走 Discussions。

@@ -48,7 +48,7 @@ flowchart LR
 | 🧠 记忆引擎 | ✅ 已实现 | 会话消息 + 长期事实记忆；Redis 可用时持久化，否则自动降级 `InMemoryMemoryStore` |
 | 🪙 Token 审计 | ✅ 已实现 | 流式/非流式 usage 采集（流式取最后 chunk，缺失按 chars/4 估算）、按模型/Agent/会话汇总、趋势、明细、CSV 导出、概览 |
 | 🖥️ 控制台 | ✅ 已实现 | 登录注册、对话（SSE）、Agent、知识库、数据源、沙箱、审计看板、模型配置、用户/角色管理 |
-| 🧪 质量保障 | ✅ 已实现 | 118 个单元/集成测试、Node 端到端冒烟脚本、GitHub Actions（后端 verify + 前端 build） |
+| 🧪 质量保障 | ✅ 已实现 | 106 个单元/集成测试、Node 端到端冒烟脚本、GitHub Actions（后端 verify + 前端 build） |
 | 🐳 Docker 沙箱 / pgvector / MCP 管理 / 数据权限 / 配额 | 🚧 v0.2 | 见路线图 |
 
 ## 技术栈

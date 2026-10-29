@@ -1,0 +1,46 @@
+# 本地基础设施（可选）：MySQL 8 + Redis 7
+#   docker compose up -d
+# 然后把后端切到 prod 或显式配置数据源/Redis：
+#   AGENTFORGE_DB_USER=agentforge AGENTFORGE_DB_PASSWORD=agentforge \
+#   AGENTFORGE_JWT_SECRET=... AGENTFORGE_CRYPTO_KEY=... \
+#   java -jar agentforge-app/target/agentforge-app-0.1.0-SNAPSHOT.jar --spring.profiles.active=prod
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: agentforge-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: agentforge
+      MYSQL_USER: agentforge
+      MYSQL_PASSWORD: agentforge
+      TZ: Asia/Shanghai
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    ports:
+      - "13306:3306"
+    volumes:
+      - agentforge-mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: agentforge-redis
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - agentforge-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  agentforge-mysql-data:
+  agentforge-redis-data:

@@ -1,0 +1,40 @@
+name: Feature request
+description: 提议新能力或改进
+title: "[Feature] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        建议先看 [`docs/02-开发路线图.md`](../blob/main/docs/02-开发路线图.md) 是否已在规划中。
+  - type: textarea
+    id: problem
+    attributes:
+      label: 要解决的问题
+      description: 业务场景 / 痛点，而不是直接给技术方案
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 建议方案
+      description: 与现有模块（auth/audit/memory/rag/datasource/agent）的关系、是否需要改冻结的 API 契约
+  - type: dropdown
+    id: module
+    attributes:
+      label: 涉及模块
+      multiple: true
+      options:
+        - agentforge-security
+        - agentforge-audit
+        - agentforge-memory
+        - agentforge-rag
+        - agentforge-datasource
+        - agentforge-agent
+        - agentforge-app
+        - agentforge-ui
+        - 文档 / 构建
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 备选方案 / 取舍
