@@ -49,7 +49,11 @@ public class UsageQueryService {
 
     public UsageSummary summary(LocalDateTime from, LocalDateTime to) {
         DateRange range = range(from, to);
-        Object[] row = tokenUsageRepository.summarize(range.from(), range.to());
+        List<Object[]> rows = tokenUsageRepository.summarize(range.from(), range.to());
+        if (rows == null || rows.isEmpty()) {
+            return new UsageSummary(0, 0, 0, BigDecimal.ZERO, 0);
+        }
+        Object[] row = rows.get(0);
         if (row == null || row.length < 5) {
             return new UsageSummary(0, 0, 0, BigDecimal.ZERO, 0);
         }
