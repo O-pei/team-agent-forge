@@ -133,6 +133,27 @@
 | GET | `/api/v1/tools` | `agent:read` | 已注册工具（名称/描述/风险等级/来源） |
 | GET | `/api/v1/orchestrations` + CRUD | `agent:read/write` | 多智能体编排定义（SEQUENTIAL/PARALLEL/ROUTING/SUPERVISOR） |
 
+### 2.7 Token 额度（agentforge-audit，写者 audit-memory）
+
+套餐（`ai_quota_tier`）定义每日额度与总额度；用户额度（`ai_user_quota`）可指定套餐、覆盖额度，并由管理员手动分配 token。额度口径统一为 `ai_token_usage.total_tokens` 按用户聚合；额度值 `0` 表示不限；每日按 `agentforge.quota.zone`（默认 `Asia/Shanghai`）自然日重置。
+
+| 方法 | 路径 | 权限 | 说明 |
+| --- | --- | --- | --- |
+| GET | `/api/v1/quota/me` | 登录即可 | 当前用户额度快照 |
+| GET | `/api/v1/quota/tiers` | `quota:read` | 套餐列表（含 `builtin` 与使用人数） |
+| POST | `/api/v1/quota/tiers` | `quota:write` | `{code, name, description, dailyTokenLimit, totalTokenLimit, sortOrder, enabled}` |
+| PUT | `/api/v1/quota/tiers/{id}` | `quota:write` | 修改套餐，`code` 不可改 |
+| DELETE | `/api/v1/quota/tiers/{id}` | `quota:write` | 内置套餐或仍被用户引用时返回 409 |
+| GET | `/api/v1/quota/users?page&size&keyword` | `quota:read` | 用户额度分页 `{records, total, page, size}` |
+| PUT | `/api/v1/quota/users/{userId}` | `quota:write` | `{tierId, dailyLimit, totalLimit}`；字段缺省/null 表示继承套餐，`0` 表示不限 |
+| DELETE | `/api/v1/quota/users/{userId}/override` | `quota:write` | 清除覆盖，恢复继承套餐 |
+| POST | `/api/v1/quota/users/{userId}/grant` | `quota:write` | `{amount > 0, reason <= 200}`，累加到总额度并记流水 |
+| GET | `/api/v1/quota/users/{userId}/grants?page&size` | `quota:read` | 手动分配流水 |
+
+额度快照字段：`userId, tierCode, tierName, dailyLimit, dailyUsed, dailyRemaining, totalLimit, totalUsed, totalRemaining, grantedTokens, unlimited, resetAt`；limit=0 表示不限，unlimited=true 时 remaining=-1。用户额度列表额外返回 `username, email, nickname, status, tierId`。
+
+超额行为：`POST /chat/stream` 与 `/agents/{id}/run` 启动前预检，额度不足返回 HTTP 429 + code `42901`；运行中每次模型调用前复检，超额时停止后续调用，SSE 先发 `error{code:42901,message}` 再发 `run.completed`（status=FAILED，保留已生成内容）。允许最后一次模型调用少量超出，因为真实 token 数在调用完成后才能确定。
+
 ## 3. SSE 事件协议（`text/event-stream`）
 
 `event:` 为事件名，`data:` 为单行 JSON；心跳 `event: ping` 每 15s。
@@ -170,7 +191,46 @@ public final class SecurityUtils {           // com.agentforge.security.util.Sec
 - `TenantContext` / `UserContext` 由 `JwtAuthenticationFilter` 填充并在 `finally` 清理。
 - 其它模块通过 Spring Security 表达式鉴权，不直接依赖 security 的内部类。
 
+### 4.1.1 security → audit（额度域读取用户与角色，只读）
+
+```java
+package com.agentforge.security.spi;
+
+public interface UserDirectory {
+    PageResult<UserBrief> pageUsers(String keyword, int page, int size);
+    UserBrief findUser(Long userId);
+    boolean hasRole(Long userId, String roleCode);
+}
+
+public record UserBrief(Long id, String username, String email, String nickname, String status) {}
+```
+
+- 实现在 security 模块，使用现有用户仓储只读查询，不暴露 Entity。
+- audit 的额度服务用该校验目标用户、展示用户名与邮箱，不反向依赖 security 的 Controller/Service。
+- security 不依赖 audit；额度写入只发生在 audit。
+
 ### 4.2 audit → agent
+
+```java
+package com.agentforge.audit.quota;
+
+public interface QuotaService {
+    QuotaStatus status(Long userId);
+    void assertCanConsume(Long userId);
+    List<QuotaTierView> listTiers();
+    QuotaTierView createTier(QuotaTierCommand cmd);
+    QuotaTierView updateTier(Long id, QuotaTierCommand cmd);
+    void deleteTier(Long id);
+    PageResult<UserQuotaView> listUsers(String keyword, int page, int size);
+    UserQuotaView updateUserQuota(Long userId, UserQuotaCommand cmd);
+    void resetUserQuota(Long userId);
+    UserQuotaView grantTokens(Long userId, long amount, String reason, Long operatorUserId);
+    PageResult<QuotaGrantView> listGrants(Long userId, int page, int size);
+}
+```
+
+- 视图 record 的字段与 §2.7 快照一致；command record 的可空字段表示继承套餐。
+- 额度不足抛 com.agentforge.common.exception.QuotaExceededException，流式场景由调用方在每次模型调用前调用 assertCanConsume。
 
 ```java
 package com.agentforge.audit.gateway;
@@ -257,6 +317,7 @@ public record SandboxResult(boolean success, String stdout, String stderr, int e
 | `V4__rag.sql` | backend-knowledge | `kb_knowledge_base`、`kb_document`、`kb_chunk` |
 | `V5__datasource.sql` | backend-runtime | `ds_datasource`、`ds_query_log` |
 | `V6__agent.sql` | backend-runtime | `agent_definition`、`agent_version`、`agent_run`、`agent_run_step`、`agent_orchestration` |
+| `V7__token_quota.sql` | audit-memory | `ai_quota_tier`、`ai_user_quota`、`ai_quota_grant_log`，种子权限 `quota:read/write` 与 FREE/PRO/ENTERPRISE 套餐 |
 
 表命名：`af_`（核心）/`ai_`/`kb_`/`ds_`/`agent_` 前缀；字段 snake_case；每表含 `created_at`/`updated_at`/`version`（除日志表）；外键可选，日志/明细表不建外键。
 
@@ -269,9 +330,9 @@ public record SandboxResult(boolean success, String stdout, String stderr, int e
 
 ## 7. 附录 A：权限码（v0.1.0 全量）
 
-`user:read|write`、`role:read|write`、`audit:read`、`model:read|write`、`agent:read|write|run`、`rag:read|write`、`datasource:read|write|query`、`memory:read|write`。
+`user:read|write`、`role:read|write`、`audit:read`、`model:read|write`、`agent:read|write|run`、`rag:read|write`、`datasource:read|write|query`、`memory:read|write`、`quota:read|write`。
 
-内置角色：`SUPER_ADMIN`（全部）、`ADMIN`（除 `user:write`/`role:write`/`model:write` 外的管理权限）、`USER`（`agent:read/run`、`rag:read`、`datasource:read/query`、`memory:read`）。
+内置角色：`SUPER_ADMIN`（全部）、`ADMIN`（除 `user:write`/`role:write`/`model:write` 外的管理权限，含 `quota:read/write`）、`USER`（`agent:read/run`、`rag:read`、`datasource:read/query`、`memory:read`，不含额度管理）。
 
 默认账号（仅 dev，由 `agentforge-security` 的 `DataInitializer` 在不存在时创建，**不写入 Flyway 迁移**）：`admin@agentforge.dev` / `Admin@123456`；`model:read/write` 等新增权限码由 `V2` 迁移种子并授权给内置角色。
 
