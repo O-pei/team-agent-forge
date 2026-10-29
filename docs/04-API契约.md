@@ -147,7 +147,7 @@
 | GET | `/api/v1/quota/users?page&size&keyword` | `quota:read` | 用户额度分页 `{records, total, page, size}` |
 | PUT | `/api/v1/quota/users/{userId}` | `quota:write` | `{tierId, dailyLimit, totalLimit}`；字段缺省/null 表示继承套餐，`0` 表示不限 |
 | DELETE | `/api/v1/quota/users/{userId}/override` | `quota:write` | 清除覆盖，恢复继承套餐 |
-| POST | `/api/v1/quota/users/{userId}/grant` | `quota:write` | `{amount > 0, reason <= 200}`，累加到总额度并记流水 |
+| POST | `/api/v1/quota/users/{userId}/grant` | `quota:write` | `{amount > 0, reason <= 200}`，累加到总额度并记流水；响应 data 为分配后的用户额度快照 |
 | GET | `/api/v1/quota/users/{userId}/grants?page&size` | `quota:read` | 手动分配流水 |
 
 额度快照字段：`userId, tierCode, tierName, dailyLimit, dailyUsed, dailyRemaining, totalLimit, totalUsed, totalRemaining, grantedTokens, unlimited, resetAt`；limit=0 表示不限，unlimited=true 时 remaining=-1。用户额度列表额外返回 `username, email, nickname, status, tierId`。

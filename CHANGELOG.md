@@ -6,6 +6,31 @@
 
 暂无（欢迎通过 Issue/PR 贡献）。
 
+## [0.2.0] - 2026-10-30
+
+本版本聚焦「企业可治理」的最后一块拼图：Token 额度控制。管理员可以按套餐档位、按用户覆盖、按需手动追加三种方式分配额度，超额请求在进入 SSE/模型调用前即被拦截（HTTP 429 / code 42901），运行中超额会停止后续模型调用并保留已生成内容。
+
+### Added
+
+- **额度套餐**：`ai_quota_tier` 表与 FREE / PRO / ENTERPRISE 内置套餐；`GET/POST/PUT/DELETE /api/v1/quota/tiers`，支持自建档位、启停、排序与使用人数统计，内置套餐或被引用时删除返回 409。
+- **用户额度**：`ai_user_quota` 表；`GET /api/v1/quota/users`（分页/关键词）、`PUT /api/v1/quota/users/{userId}`（套餐 + 每日/总额度覆盖，`0` 表示不限，null 表示继承套餐）、`DELETE .../override` 恢复继承；`GET /api/v1/quota/me` 返回每日/总额度与剩余量快照。
+- **手动分配**：`POST /api/v1/quota/users/{userId}/grant` 追加总量并写入 `ai_quota_grant_log` 流水，`GET .../grants` 分页查询，返回分配后的额度快照。
+- **运行时拦截**：SSE 建立前预检、`AgentExecutionService.start()` 事务内二次预检、每次模型调用前复检（`QuotaGuardChatModel`，`stream` 用 `Flux.defer` 在订阅时校验）；超额抛 `QuotaExceededException` → 全局处理器返回 HTTP 429 + code `42901` 并显式指定 JSON（避免 `Accept: text/event-stream` 内容协商失败）；流式运行中超额发 `error{code:42901}` 与 `run.completed{status:FAILED}`，保留部分输出。
+- **权限与菜单**：Flyway V7 种子 `quota:read` / `quota:write`，ADMIN 拥有读写、USER 不拥有；`/auth/me` 菜单新增「额度管理」（`/admin/quota`）。
+- **管理台**：新增「额度管理」页（套餐 / 用户额度 / 分配流水三个视图），侧边栏入口按 `quota:read` 显示；聊天页显示当前用户额度徽标，收到 42901 时展示额度提示。
+- **开发账号初始化**：dev 环境创建默认管理员后幂等补齐 `ai_user_quota`（ENTERPRISE 套餐）；超级管理员默认绕过额度限制（`agentforge.quota.bypass-super-admin`）。
+- **文档与脚本**：`docs/10-Token额度控制.md`；`scripts/quota-e2e.mjs` 专项验收脚本（套餐/用户/预检/手动分配/流水 19 项）。
+
+### Changed
+
+- `GET /auth/me` 菜单项扩展为 `{code,name,path,icon,permission}`，前端菜单与权限保持一致。
+- `mvn verify` 测试规模从 109 增至 138。
+
+### Fixed
+
+- `POST /quota/users/{userId}/grant` 现在返回分配后的用户额度快照（此前返回 `null`，与契约不符）。
+- SSE 请求在额度预检失败时不再因内容协商失败退化为 500，而是稳定返回 429 + `42901`。
+
 ## [0.1.0] - 2026-10-29
 
 首个开源版本：`git clone` 后零外部依赖启动（H2 + Mock 模型 + 可选 Redis），即可完成「注册/登录 → 建知识库 → 传文档 → 创建 Agent → 流式对话（工具调用/引用）→ Token 审计与 RBAC 管理」闭环。

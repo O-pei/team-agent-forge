@@ -69,8 +69,8 @@ app --> agent --> {memory, rag, datasource} --> audit --> security --> common
 
 ## 7. 当前阶段
 
-**v0.1.0 已交付**（2026-10-29）：多模块骨架、邮箱注册验证 + JWT + RBAC、模型网关 + Token 审计、Redis/InMemory 记忆、RAG 知识库、数据源只读直连、ProcessSandbox、多智能体 Harness + SSE、Vue3 前端、e2e 冒烟脚本（`node scripts/smoke-test.mjs`）与 CI。
+**v0.2.0 已交付**（2026-10-30）：在 v0.1.0（多模块骨架、邮箱注册验证 + JWT + RBAC、模型网关 + Token 审计、Redis/InMemory 记忆、RAG 知识库、数据源只读直连、ProcessSandbox、多智能体 Harness + SSE、Vue3 前端）之上新增 **Token 额度控制**：套餐档位 + 用户覆盖 + 手动追加，每日/总额度双约束，超额 429/42901（SSE 前预检 + 每次模型调用前复检 + 运行中留痕拦截），管理台与 `docs/10`、`scripts/quota-e2e.mjs`。
 
-- 模块设计文档：`docs/05` 认证与权限、`docs/06` 模型网关/审计/记忆、`docs/07` RAG/数据源/沙箱、`docs/08` 前端、`docs/09` 多智能体 Harness。
-- 已知边界与 v0.2 计划：见各文档「已知限制」章节与 `README.md` 能力矩阵（SUPERVISOR 为 LlmRoutingAgent 近似、沙箱无强隔离、`OPENAI_COMPATIBLE` 未接入、多轮上下文装配等）。
-- 下一步（v0.2）：Graph 循环编排、Docker/gVisor 沙箱、pgvector、真实 DashScope 回归、计费与预算告警完善。
+- 模块设计文档：`docs/05` 认证与权限、`docs/06` 模型网关/审计/记忆、`docs/07` RAG/数据源/沙箱、`docs/08` 前端、`docs/09` 多智能体 Harness、`docs/10` Token 额度控制。
+- 已知边界与计划：见各文档「已知限制」章节与 `README.md` 能力矩阵（SUPERVISOR 为 LlmRoutingAgent 近似、沙箱无强隔离、`OPENAI_COMPATIBLE` 未接入、多轮上下文装配等）。
+- 下一步（v0.3）：Graph 循环编排、Docker/gVisor 沙箱、pgvector、MCP 管理、真实 DashScope 回归、预算告警完善。

@@ -11,8 +11,8 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![CI](https://github.com/O-pei/team-agent-forge/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/O-pei/team-agent-forge/actions/workflows/backend-ci.yml)
 
-> 状态：**v0.1.0 已发布** —— 认证/RBAC、模型网关、Token 审计、记忆引擎、RAG、数据源直连、进程沙箱、多智能体 Harness（SSE）、Vue3 控制台均可端到端运行；无模型 Key / 无 Redis / 无 Docker 时自动降级，零外部依赖即可启动。
-> 规划与边界见 [`docs/02-开发路线图.md`](docs/02-开发路线图.md)，能力现状见下方[能力矩阵](#能力矩阵v010)。
+> 状态：**v0.2.0 已发布** —— 认证/RBAC、模型网关、Token 审计、记忆引擎、RAG、数据源直连、进程沙箱、多智能体 Harness（SSE）、Token 额度控制、Vue3 控制台均可端到端运行；无模型 Key / 无 Redis / 无 Docker 时自动降级，零外部依赖即可启动。
+> 规划与边界见 [`docs/02-开发路线图.md`](docs/02-开发路线图.md)，能力现状见下方[能力矩阵](#能力矩阵v020)。
 
 ---
 
@@ -29,15 +29,15 @@ flowchart LR
     AGENT --> RAG[agentforge-rag<br/>知识库 / 切分 / 向量检索]
     AGENT --> DS[agentforge-datasource<br/>只读 SQL / 进程沙箱]
     AGENT --> MEM[agentforge-memory<br/>Redis / InMemory 记忆]
-    AGENT --> AUDIT[agentforge-audit<br/>模型网关 / Token 审计]
+    AGENT --> AUDIT[agentforge-audit<br/>模型网关 / Token 审计 / 额度]
     RAG --> AUDIT
     AUDIT --> SEC[agentforge-security<br/>JWT / 邮箱验证码 / RBAC]
     SEC --> COMMON[agentforge-common<br/>统一响应 / 异常 / 上下文 / 加密]
 ```
 
-## 能力矩阵（v0.1.0）
+## 能力矩阵（v0.2.0）
 
-| 能力 | v0.1.0 状态 | 说明 |
+| 能力 | v0.2.0 状态 | 说明 |
 | --- | --- | --- |
 | 🤖 多智能体协作 | ✅ 已实现 | `ReactAgent`；SINGLE / SEQUENTIAL / PARALLEL 编排可用；SUPERVISOR 当前用 `LlmRoutingAgent` 近似（v0.2 换 Graph 循环） |
 | 🧩 Harness 运行时 | ✅ 已实现 | Agent 定义 CRUD、运行记录与步骤（`agent_run` / `agent_run_step`）、工具中心、取消运行、SSE 流式协议 |
@@ -47,9 +47,10 @@ flowchart LR
 | 🛡️ 安全沙箱执行 | ✅ 已实现 | Process 沙箱：Java / Python / Node / Shell，超时杀进程树、输出截断、环境变量白名单；**无网络/文件系统隔离**，生产请等 v0.2 的 Docker/gVisor |
 | 🧠 记忆引擎 | ✅ 已实现 | 会话消息 + 长期事实记忆；Redis 可用时持久化，否则自动降级 `InMemoryMemoryStore` |
 | 🪙 Token 审计 | ✅ 已实现 | 流式/非流式 usage 采集（流式取最后 chunk，缺失按 chars/4 估算）、按模型/Agent/会话汇总、趋势、明细、CSV 导出、概览 |
-| 🖥️ 控制台 | ✅ 已实现 | 登录注册、对话（SSE）、Agent、知识库、数据源、沙箱、审计看板、模型配置、用户/角色管理 |
-| 🧪 质量保障 | ✅ 已实现 | 106 个单元/集成测试、Node 端到端冒烟脚本、GitHub Actions（后端 verify + 前端 build） |
-| 🐳 Docker 沙箱 / pgvector / MCP 管理 / 数据权限 / 配额 | 🚧 v0.2 | 见路线图 |
+| 💰 Token 额度控制 | ✅ 已实现 | 套餐档位（FREE/PRO/ENTERPRISE，可自建）+ 用户覆盖 + 手动追加三层；每日额度按自然日重置，总额度只增不减；超限 HTTP 429 / code 42901，SSE 建立前预检、每次模型调用前复检、运行中超额停止后续调用并保留已生成内容；管理台可维护套餐、用户额度与分配流水 |
+| 🖥️ 控制台 | ✅ 已实现 | 登录注册、对话（SSE）、Agent、知识库、数据源、沙箱、审计看板、模型配置、用户/角色/额度管理 |
+| 🧪 质量保障 | ✅ 已实现 | 138 个单元/集成测试、Node 端到端冒烟脚本（31 项）、额度专项验收脚本（19 项）、GitHub Actions（后端 verify + 前端 build） |
+| 🐳 Docker 沙箱 / pgvector / MCP 管理 / 数据权限 / 预算告警 | 🚧 v0.3 | 见路线图 |
 
 ## 技术栈
 
@@ -116,12 +117,15 @@ agentforge-parent
 | [RAG 与数据源与沙箱](docs/07-RAG与数据源与沙箱.md) | 检索管线、SQL 安全、沙箱边界 |
 | [前端开发指南](docs/08-前端开发指南.md) | 请求层、SSE、页面与权限映射 |
 | [多智能体 Harness](docs/09-多智能体Harness设计.md) | ReactAgent 工厂、编排、工具、SSE 事件 |
+| [Token 额度控制](docs/10-Token额度控制.md) | 套餐/用户额度/手动分配、超额拦截与验收 |
 | [AGENTS.md](AGENTS.md) | 面向 AI 协作者的开发约定 |
 | [研究笔记](docs/research/SAA-1.1.2-API.md) | Spring AI Alibaba 1.1.2.x API 实测 |
 
-## 已知限制（v0.1.0）
+## 已知限制（v0.2.0）
 
-- **沙箱隔离**：Process 沙箱只做超时/输出/环境变量约束，不隔离网络与文件系统；不可执行不可信代码，生产需 Docker/gVisor（v0.2）。
+- **额度统计口径**：额度按 `ai_token_usage.total_tokens` 聚合，非实时逐步扣减；流式对话允许最后一次模型调用少量超出（真实 token 数在调用完成后才确定），下一次调用前即会拦截。
+- **额度重置**：每日额度按 `Asia/Shanghai` 自然日重置；手动追加计入总额度，不会抬高每日额度；超级管理员默认不受额度限制（`agentforge.quota.bypass-super-admin`）。
+- **沙箱隔离**：Process 沙箱只做超时/输出/环境变量约束，不隔离网络与文件系统；不可执行不可信代码，生产需 Docker/gVisor（v0.3）。
 - **向量检索**：默认 `HashingEmbeddingModel` 是离线确定性哈希向量，召回质量低于真实 embedding；`SimpleVectorStore` 为单机 JSON 持久化。
 - **记忆**：Redis 的 checkpointer（`RedisSaver`）尚未作为默认开启；无 Redis 时为进程内记忆。
 - **编排**：SUPERVISOR 用 `LlmRoutingAgent` 近似（单次路由），并行编排的 merge 策略较简单。
