@@ -28,18 +28,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
 /**
- * 本地进程沙箱（默认实现，无需 Docker）。
- *
- * <p>安全限制：</p>
- * <ul>
- *   <li>支持语言白名单：java / python / node / shell，其他语言直接拒绝；</li>
- *   <li>代码长度上限 100KB，空代码拒绝；</li>
- *   <li>每次执行在独立临时目录 {@code .data/sandbox/<uuid>}，执行完递归删除；</li>
- *   <li>子进程环境变量使用白名单重建（PATH/JAVA_HOME/SystemRoot/TEMP/TMP/LANG），
- *       不继承父进程环境，避免 API Key 等敏感变量泄漏；请求 env 仅允许 LANG/LC_ALL/TZ/PYTHONIOENCODING；</li>
- *   <li>超时（默认 10s，范围 1~30s）强制 kill 整个进程树，exitCode=-1 且 success=false；</li>
- *   <li>stdout/stderr 各自最多保留 64KB，超出截断并标记 truncated。</li>
- * </ul>
+ * 本地进程沙箱（默认实现，无需 Docker）：在独立临时目录执行用户代码，超时强制杀整个进程树。
+ * 安全约束：语言白名单、代码长度上限 100KB、环境变量白名单重建（不继承父进程，避免泄漏密钥）、
+ * 超时 1~30s 强杀、stdout/stderr 各截断 64KB；没有网络与文件系统隔离，只适合受控内网。
  */
 @Slf4j
 @Component

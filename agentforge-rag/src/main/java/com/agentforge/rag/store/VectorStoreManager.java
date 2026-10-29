@@ -26,8 +26,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
 /**
- * 基于 {@link SimpleVectorStore} 的按知识库向量库管理：每个知识库一个 JSON 文件
- * {@code .data/vector-store/<kbId>.json}，启动时加载、写入后原子落盘。
+ * 按知识库管理 SimpleVectorStore：每个知识库一个 JSON 文件（.data/vector-store/<kbId>.json），
+ * 启动时加载，写入后原子落盘。
  */
 @Slf4j
 @Component
@@ -94,13 +94,7 @@ public class VectorStoreManager {
         });
     }
 
-    /**
-     * 写入文档分块向量并持久化。
-     *
-     * @param kbId     知识库 id
-     * @param chunks   已保存的分块（含数据库 id）
-     * @param filename 文档文件名（写入元数据，检索结果可直接展示）
-     */
+    /** 写入文档分块向量并持久化；filename 写入元数据，检索结果可直接展示。 */
     public void addChunks(long kbId, List<KbChunk> chunks, String filename) {
         if (chunks == null || chunks.isEmpty()) {
             return;

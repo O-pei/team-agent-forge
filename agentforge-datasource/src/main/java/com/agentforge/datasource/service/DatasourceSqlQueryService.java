@@ -22,10 +22,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 只读 SQL 查询服务（实现冻结 SPI {@link SqlQueryService}）。
- *
- * <p>执行前依次校验：数据源启用 → 只读标记 → {@link SqlGuard}（单条 SELECT/禁 DDL/DML/注释/加锁/强制 LIMIT）
- * → queryTimeout 10s → setMaxRows 防大结果集 → 写 ds_query_log。</p>
+ * 只读 SQL 查询服务（实现冻结 SPI SqlQueryService）。
+ * 执行前依次校验：数据源启用、只读标记、SqlGuard（单条 SELECT、禁 DDL/DML/注释/加锁、强制 LIMIT），
+ * 再设 10s queryTimeout 与 setMaxRows 防止大结果集，成功失败都写 ds_query_log。
  */
 @Slf4j
 @Service

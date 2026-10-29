@@ -24,10 +24,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
 /**
- * Docker 沙箱（可选实现）：仅当 {@code agentforge.sandbox.docker-enabled=true} 且本机
- * 检测到可用的 Docker daemon 时可用，否则自动跳过（不阻塞启动）。
- *
- * <p>本机无 Docker，实际运行走 {@link ProcessSandboxProvider}。</p>
+ * Docker 沙箱（可选实现）：仅当 agentforge.sandbox.docker-enabled=true 且本机检测到 Docker daemon
+ * 时可用，否则自动跳过并降级到 ProcessSandboxProvider，不阻塞启动。
  */
 @Slf4j
 @Component

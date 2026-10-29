@@ -6,8 +6,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 /**
- * 异步文档处理入口：@Async 线程中调用 {@link DocumentIngestionService}，
- * 失败时写 FAILED 状态，不阻塞上传请求。
+ * 异步文档处理入口：在 @Async 线程中调用 DocumentIngestionService，失败写 FAILED 状态，不阻塞上传请求。
  */
 @Slf4j
 @Service

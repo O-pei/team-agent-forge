@@ -16,16 +16,8 @@ import java.util.regex.Pattern;
 
 /**
  * 只读 SQL 安全校验器（发布门槛）：仅允许单条简单 SELECT。
- *
- * <p>防护点：</p>
- * <ol>
- *   <li>拒绝空 SQL / 超长 SQL（&gt;10000 字符）；</li>
- *   <li>拒绝注释（{@code --}、{@code /*}、{@code *}{@code /}、{@code #}），防注释注入；</li>
- *   <li>JSqlParser 解析后必须恰好 1 条语句，且为 {@link Select} 的 PlainSelect（拒绝 UNION 等集合运算）；</li>
- *   <li>拒绝 DDL/DML/过程调用/文件写出等危险关键字与 {@code SELECT ... INTO}；</li>
- *   <li>拒绝 {@code FOR UPDATE} / {@code LOCK IN SHARE MODE} 加锁查询；</li>
- *   <li>自动强制 LIMIT：无 LIMIT 时追加，有 LIMIT 且超过上限时收紧到 maxRows（≤500）。</li>
- * </ol>
+ * 依次拒绝空或超长的 SQL、注释、加锁查询与危险关键字，再用 JSqlParser 确认只有一条 PlainSelect，
+ * 最后追加或收紧 LIMIT，把返回行数限制在 500 以内。
  */
 public final class SqlGuard {
 
@@ -48,13 +40,7 @@ public final class SqlGuard {
     private SqlGuard() {
     }
 
-    /**
-     * 校验并改写 SQL。
-     *
-     * @param sql             用户 SQL
-     * @param requestedMaxRows 期望最大行数（≤0 用默认值，大于 500 按 500）
-     * @return 加好 LIMIT 的安全 SQL 与最终行数上限
-     */
+    /** 校验并改写 SQL：requestedMaxRows 小于等于 0 时用默认值，大于 500 时按 500 收紧。 */
     public static GuardedSql validate(String sql, int requestedMaxRows) {
         if (sql == null || sql.isBlank()) {
             throw BizException.badRequest("SQL 不能为空");
@@ -131,12 +117,7 @@ public final class SqlGuard {
         return newline < 0 ? message : message.substring(0, newline);
     }
 
-    /**
-     * 校验结果。
-     *
-     * @param sql     已追加/收紧 LIMIT 的安全 SQL
-     * @param maxRows 最终行数上限
-     */
+    /** 校验结果：已追加或收紧 LIMIT 的安全 SQL 与最终行数上限。 */
     public record GuardedSql(String sql, int maxRows) {
     }
 }

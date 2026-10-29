@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 语义检索：实现冻结的 {@link KnowledgeRetriever} SPI，并按契约输出 {@link SearchResultItem}。
+ * 语义检索：实现冻结的 KnowledgeRetriever SPI，并按契约把命中结果转成 SearchResultItem。
  */
 @Slf4j
 @Service

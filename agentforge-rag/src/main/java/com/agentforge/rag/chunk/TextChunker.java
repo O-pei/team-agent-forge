@@ -18,12 +18,7 @@ public final class TextChunker {
         return split(text, DEFAULT_CHUNK_SIZE, DEFAULT_OVERLAP);
     }
 
-    /**
-     * @param text      原始文本
-     * @param chunkSize 目标块大小（字符数），必须 > overlap
-     * @param overlap   相邻块重叠字符数
-     * @return 非空块列表（保持原文顺序）
-     */
+    /** 按指定块大小与重叠切分；chunkSize 必须大于 overlap 且 overlap 不小于 0。 */
     public static List<String> split(String text, int chunkSize, int overlap) {
         List<String> chunks = new ArrayList<>();
         if (text == null) {

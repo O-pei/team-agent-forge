@@ -44,8 +44,8 @@ public class DocumentService {
     private String uploadDir;
 
     /**
-     * 上传文档：白名单校验 → 原文落盘 → 建 PENDING 记录 → 异步解析。
-     * 注意：本方法不加 @Transactional，保证异步线程启动前记录已提交。
+     * 上传文档：白名单校验后原文落盘，建 PENDING 记录再异步解析。
+     * 本方法不加 @Transactional，保证异步线程启动前记录已提交。
      */
     public DocumentResponse upload(long kbId, MultipartFile file) {
         knowledgeBaseService.require(kbId);

@@ -14,10 +14,8 @@ import java.util.Locale;
 import java.util.Set;
 
 /**
- * 文档解析：txt/md 直接按 UTF-8 读取；pdf/docx/html 用 Tika 提取纯文本。
- *
- * <p>上传白名单在 {@link #validate(String, long)} 中校验（扩展名 + 大小），
- * 解析失败抛 {@link BizException}，由异步处理流程标记 FAILED。</p>
+ * 文档解析：txt/md 直接按 UTF-8 读取，pdf/docx/html 交给 Tika 提取纯文本。
+ * 上传白名单（扩展名与大小）在 validate 中校验，解析失败抛 BizException，由异步流程标记 FAILED。
  */
 @Slf4j
 @Component

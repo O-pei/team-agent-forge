@@ -23,7 +23,7 @@ public class DataSourceEntity extends BaseEntity {
     @Column(nullable = false, length = 128)
     private String name;
 
-    /** MYSQL / POSTGRESQL / H2（见 {@link DataSourceType}）。 */
+    /** MYSQL / POSTGRESQL / H2（对应 DataSourceType 枚举）。 */
     @Column(nullable = false, length = 16)
     private String type;
 

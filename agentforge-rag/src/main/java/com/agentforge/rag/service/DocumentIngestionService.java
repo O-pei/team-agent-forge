@@ -21,10 +21,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 文档解析 / 切分 / 向量化的真正执行者（同步事务逻辑）。
- *
- * <p>由 {@link DocumentProcessingService} 通过 @Async 调用；拆成两个 Bean 是为了避免
- * Spring 自调用导致 @Transactional / @Async 失效。</p>
+ * 文档解析、切分、向量化的真正执行者（同步事务逻辑），由 DocumentProcessingService 通过 @Async 调用。
+ * 拆成两个 Bean 是为了避免 Spring 自调用导致 @Transactional 与 @Async 失效。
  */
 @Slf4j
 @Service
