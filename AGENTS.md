@@ -45,6 +45,15 @@ app --> agent --> {memory, rag, datasource} --> audit --> security --> common
 - 所有对外接口必须标注 `@PreAuthorize` 权限码（匿名接口除外）。
 - 新依赖必须先在根 `pom.xml` 的 `dependencyManagement` 声明版本。
 
+### 4.1 注释规范（强制）
+
+- 注释一律用中文纯文本，不使用 Markdown 语法：不要反引号、加粗、行首列表符号、标题、表格、链接与代码围栏。
+- 不要 HTML 排版标签（p、br、ul、ol、li、pre、code 等），不要 ASCII 图、大段清单或示例。
+- 类级注释：核心类（SPI、模型网关、审计记账、安全认证、SQL 防护、沙箱、Agent 运行时与编排、全局异常、启动与安全配置）用 2~6 行说明职责与关键约束；普通类（Controller/Service/Entity/Repository/DTO/Util/测试）用 1~2 行写明类名与用途，能删则删。
+- 方法注释只保留核心方法、复杂逻辑、边界与安全校验，1~3 行说明做什么、为什么；删除复述方法名的注释；getter/setter 与简单 CRUD 不加注释。@param、@return 只在确有帮助时保留且简洁。
+- 代码标识符直接写名字，尽量不用 {@code}；禁止 @author、@version。
+- 提交前自检：`node scripts/check-comments.mjs`，必须 0 违规。
+
 ## 5. 安全红线
 
 - 仓库内**不得出现任何真实 API Key / 数据库密码 / JWT 密钥**；本地放 `.env`（已被 `.gitignore` 忽略）或环境变量。
