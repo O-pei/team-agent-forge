@@ -11,6 +11,7 @@ import com.agentforge.common.exception.BizException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.alibaba.cloud.ai.graph.agent.Agent;
+import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatOptions;
 import com.alibaba.cloud.ai.graph.agent.Builder;
 import com.alibaba.cloud.ai.graph.agent.ReactAgent;
 import com.alibaba.cloud.ai.graph.agent.flow.agent.LlmRoutingAgent;
@@ -21,7 +22,6 @@ import com.alibaba.cloud.ai.graph.checkpoint.savers.MemorySaver;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.model.ChatModel;
-import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 
@@ -139,7 +139,12 @@ public class ReactAgentFactory {
                 ? DEFAULT_MAX_ITERATIONS : definition.getMaxIterations();
         builder.hooks(List.of(ModelCallLimitHook.builder().runLimit(maxIterations).build()));
         if (definition.getTemperature() != null) {
-            builder.chatOptions(ChatOptions.builder().temperature(definition.getTemperature()).build());
+            // 注意：Spring AI 的 DefaultChatOptions 缺少 @JsonProperty 字段，
+            // SAA DefaultBuilder 合并 ChatOptions 时会抛 IllegalArgumentException，
+            // 因此使用 DashScopeChatOptions（Jackson 可序列化，Mock 模型会忽略该选项）。
+            DashScopeChatOptions options = new DashScopeChatOptions();
+            options.setTemperature(definition.getTemperature());
+            builder.chatOptions(options);
         }
         Class<?> outputType = resolveOutputType(definition.getOutputType());
         if (outputType != null) {

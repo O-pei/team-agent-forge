@@ -38,6 +38,9 @@ public class AgentService {
 
     private static final int MAX_PAGE_SIZE = 100;
 
+    /** 未指定时使用的默认最大迭代次数（与 V6 迁移的 DEFAULT 5 保持一致）。 */
+    private static final int DEFAULT_MAX_ITERATIONS = 5;
+
     private final AgentDefinitionRepository definitionRepository;
     private final AgentVersionRepository versionRepository;
     private final AgentToolRegistry toolRegistry;
@@ -81,9 +84,10 @@ public class AgentService {
         entity.setSystemPrompt(request.systemPrompt());
         entity.setModelId(request.modelId());
         entity.setTemperature(request.temperature());
-        entity.setMaxIterations(request.maxIterations());
-        entity.setToolsJson(writeJson(request.tools()));
+        entity.setMaxIterations(request.maxIterations() == null || request.maxIterations() <= 0
+                ? DEFAULT_MAX_ITERATIONS : request.maxIterations());
         entity.setSubAgentIdsJson(writeJson(request.subAgentIds()));
+        entity.setToolsJson(writeJson(request.tools()));
         entity.setOutputType(request.outputType());
         entity.setEnabled(request.enabled() == null || request.enabled());
         entity.setDeleted(false);
@@ -132,7 +136,8 @@ public class AgentService {
             entity.setTemperature(request.temperature());
         }
         if (request.maxIterations() != null) {
-            entity.setMaxIterations(request.maxIterations());
+            entity.setMaxIterations(request.maxIterations() <= 0
+                    ? DEFAULT_MAX_ITERATIONS : request.maxIterations());
         }
         if (request.outputType() != null) {
             entity.setOutputType(request.outputType());

@@ -5,9 +5,9 @@ import com.agentforge.agent.event.AgentEvent;
 import com.agentforge.agent.event.AgentEvents;
 import com.agentforge.agent.runtime.AgentEventSink;
 import com.agentforge.agent.runtime.RunContext;
+import com.agentforge.common.api.ErrorCode;
 import com.agentforge.common.exception.BizException;
 import com.alibaba.cloud.ai.graph.NodeOutput;
-import com.alibaba.cloud.ai.graph.agent.Agent;
 import com.alibaba.cloud.ai.graph.agent.ReactAgent;
 import com.alibaba.cloud.ai.graph.streaming.OutputType;
 import com.alibaba.cloud.ai.graph.streaming.StreamingOutput;
@@ -26,7 +26,8 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
- * SSE 瀵硅瘽锛氬紓姝ユ墽琛?Agent锛屾寜濂戠害鎺ㄩ€?delta / tool / usage / done 绛変簨浠躲€? */
+ * SSE 对话：异步执行 Agent，按契约推送 delta / tool / usage / done 等事件。
+ */
 @Slf4j
 @Service
 public class AgentChatService {
@@ -51,15 +52,25 @@ public class AgentChatService {
 
     public SseEmitter chat(ChatStreamRequest request) {
         if (request == null || request.agentId() == null) {
-            throw BizException.badRequest("agentId 涓嶈兘涓虹┖");
+            throw BizException.badRequest("agentId 不能为空");
         }
         if (request.message() == null || request.message().isBlank()) {
-            throw BizException.badRequest("message 涓嶈兘涓虹┖");
+            throw BizException.badRequest("message 不能为空");
         }
         SseEmitter emitter = new SseEmitter(SSE_TIMEOUT_MS);
         AgentEventSink sink = (event, data) -> send(emitter, event, data);
-        AgentExecutionService.Execution execution = executionService.start(
-                request.agentId(), request.message(), request.sessionId(), true, sink);
+        AgentExecutionService.Execution execution;
+        try {
+            execution = executionService.start(
+                    request.agentId(), request.message(), request.sessionId(), true, sink);
+        } catch (RuntimeException e) {
+            // 启动阶段（校验/落库/构建 Agent）失败也走 SSE error 事件，避免客户端拿到 JSON 500
+            log.warn("SSE 启动失败 agentId={}", request.agentId(), e);
+            int code = e instanceof BizException biz ? biz.getCode() : ErrorCode.INTERNAL_ERROR.getCode();
+            send(emitter, AgentEvent.ERROR, new AgentEvents.ErrorData(code, e.getMessage()));
+            emitter.complete();
+            return emitter;
+        }
 
         ScheduledFuture<?> ping = PING_SCHEDULER.scheduleAtFixedRate(
                 () -> send(emitter, AgentEvent.PING, new AgentEvents.MessageDelta("")),
@@ -84,8 +95,7 @@ public class AgentChatService {
             executionService.bindRunThread(execution);
             context.emit(AgentEvent.RUN_STARTED, new AgentEvents.RunStarted(
                     context.getRunId(), context.getAgentId(), context.getSessionId(), context.getModelName()));
-            Agent agent = execution.agent();
-            if (agent instanceof ReactAgent reactAgent) {
+            if (execution.agent() instanceof ReactAgent reactAgent) {
                 reactAgent.stream(execution.message(), execution.config())
                         .takeWhile(node -> !context.isCancelled())
                         .doOnNext(node -> handleNode(node, context, answer, fallback))
@@ -111,16 +121,16 @@ public class AgentChatService {
             context.emit(AgentEvent.RUN_COMPLETED, executionService.completedEvent(execution, run));
             emitter.complete();
         } catch (Exception e) {
-            log.error("SSE 杩愯澶辫触 runId={}", context.getRunId(), e);
+            log.error("SSE 运行失败 runId={}", context.getRunId(), e);
             try {
                 context.emit(AgentEvent.ERROR, new AgentEvents.ErrorData(
-                        com.agentforge.common.api.ErrorCode.INTERNAL_ERROR.getCode(), e.getMessage()));
+                        ErrorCode.INTERNAL_ERROR.getCode(), e.getMessage()));
                 var run = executionService.complete(execution,
                         answer.length() == 0 ? null : answer.toString(),
                         com.agentforge.agent.domain.RunStatus.FAILED, e.getMessage());
                 context.emit(AgentEvent.RUN_COMPLETED, executionService.completedEvent(execution, run));
             } catch (Exception persistenceError) {
-                log.error("淇濆瓨澶辫触杩愯璁板綍鍑洪敊 runId={}", context.getRunId(), persistenceError);
+                log.error("保存失败运行记录出错 runId={}", context.getRunId(), persistenceError);
             }
             emitter.complete();
         }
@@ -154,13 +164,14 @@ public class AgentChatService {
             String json = toJson(event, data);
             emitter.send(SseEmitter.event().name(event).data(json));
         } catch (Exception e) {
-            throw new IllegalStateException("SSE 鍙戦€佸け璐? " + e.getMessage(), e);
+            throw new IllegalStateException("SSE 发送失败: " + e.getMessage(), e);
         }
     }
 
     /**
-     * 浜嬩欢 data 搴忓垪鍖栵細缁熶竴闄勫甫 {@code type} 瀛楁锛堜笌 event 鍚嶄竴鑷达級锛屼究浜庡墠绔寜
-     * {@code {type, content}} 缁熶竴瑙ｆ瀽锛涘悓鏃朵繚鐣欏绾﹀瓧娈碉紙濡?message.delta 鐨?content锛夈€?     */
+     * 事件 data 序列化：统一附带 {@code type} 字段（与 event 名一致），便于前端按
+     * {@code {type, content}} 统一解析；同时保留契约字段（如 message.delta 的 content）。
+     */
     String toJson(String event, Object data) {
         try {
             JsonNode node = objectMapper.valueToTree(data);
@@ -169,7 +180,7 @@ public class AgentChatService {
             }
             return objectMapper.writeValueAsString(node);
         } catch (Exception e) {
-            throw new IllegalStateException("SSE 搴忓垪鍖栧け璐? " + e.getMessage(), e);
+            throw new IllegalStateException("SSE 序列化失败: " + e.getMessage(), e);
         }
     }
 }
